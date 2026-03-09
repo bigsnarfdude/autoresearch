@@ -1,82 +1,93 @@
 # autoresearch (ralph fork)
 
-Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding two autonomous research agent modes: **single-ralph** (persistent memory loop) and **multi-ralph** (parallel agents sharing one GPU with rotating coordinator).
+Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding autonomous research agent modes: **single-ralph** (persistent memory loop), **multi-ralph** (parallel agents with rotating coordinator), and a **cognitive architecture experiment** comparing 4 agent designs on 8×A100.
 
-## Results
+## Results across 4 runs
 
-### Single-Ralph on RTX 4070 Ti SUPER (16GB) — 42 experiments
+### The punchline
+
+4 independent runs, 3 hardware configs, 2 agent designs — same discoveries emerge every time. Claude does gradient descent over hyperparameter space, and the gradient is consistent.
+
+| Run | Hardware | Agents | Design | Experiments | Best BPB | Key discovery |
+|-----|----------|--------|--------|-------------|----------|---------------|
+| 1 | RTX 4070 Ti 16GB | 1 | single-ralph | 42 | **1.150** | Depth reduction (speed > capacity) |
+| 2 | 1×A100 40GB | 3 shared | multi-ralph | 20 | 1.180 | x0_lambda + combination search |
+| 3 | RTX 4070 Ti 16GB | 1 | single-ralph | 5+ | 1.175 | Reproduces runs 1-2 findings |
+| 4 | 8×A100 40GB | 8 (1/GPU) | 4 architectures | in progress | **1.109** | TOTAL_BATCH_SIZE halving (#1 H100 win) |
+
+### Run 4: 8 agents, 8×A100, 4 cognitive architectures (ACTIVE)
+
+8 agents with different "brains" on 8 dedicated GPUs. Agent 2 (blackboard design with structured memory) independently discovered halving TOTAL_BATCH_SIZE — the same change that was the #1 win in [Karpathy's 125-experiment H100 run](https://github.com/karpathy/autoresearch/pull/2).
+
+| Agent | Design | Baseline | Best | Finding |
+|-------|--------|----------|------|---------|
+| 0 | Vanilla (no memory) | 1.180 | - | Control group |
+| 1 | Single-ralph (progress.md) | 1.144 | - | Proven persistent memory |
+| **2** | **Blackboard + structured memory** | **1.180** | **1.109** | **TOTAL_BATCH_SIZE=2\*\*18 → 395 steps, #1 win** |
+| 3 | Blackboard + judge | 1.183 | - | Self-review for confounds |
+| 4 | Supervisor | 1.180 | - | Strategic oversight for all |
+| 5 | Debate A | 1.187 | - | Proposes, debates with agent 6 |
+| 6 | Debate B | 1.172 | - | Challenges agent 5 |
+| 7 | Big batch (batch=64) | 1.142 | - | Tests larger models + capacity |
+
+Agent 2 posted to the shared blackboard: *"TOTAL_BATCH_SIZE=2\*\*18 is a massive win. 1.109 at 395 steps vs 1.18 at 183 steps. All agents should use 2\*\*18 as new baseline."* The supervisor (agent 4) confirmed. The judge (agent 3) was constrained by stale prompts — a lesson in meta-parameter management.
+
+### Run 1: Single-Ralph on RTX 4070 Ti SUPER (16GB) — 42 experiments
 
 Best: **1.150 BPB** (from 1.193 baseline, -3.6%)
 
-| # | Experiment | val_bpb | Status | Insight |
-|---|-----------|---------|--------|---------|
-| 0 | Baseline (batch=32) | 1.193 | keep | Initial |
-| 4 | Matrix LR 0.08, Emb LR 1.2 | 1.179 | keep | Higher LR helps |
-| 6 | Warmdown 0.5→0.3 | 1.177 | keep | Less cooldown |
-| 9 | FINAL_LR_FRAC 0.2 | 1.174 | keep | Non-zero floor |
-| 12 | Unembedding LR 0.008 | 1.170 | keep | LR scaling win |
-| 15 | Scalar LR 1.0 | 1.169 | keep | LR scaling win |
-| 17 | **Depth 8→6** | **1.158** | keep | Biggest single win |
-| 25 | Depth 6→5 | 1.157 | keep | Even smaller better |
-| 32 | Window all-short S | 1.155 | keep | Faster + better quality |
-| 35 | Muon warmup 300→100 steps | 1.153 | keep | Less warmup waste |
-| 37 | Softcap 15→10 | 1.152 | keep | Tighter capping |
-| 38 | Softcap 10→8 | 1.151 | keep | Even tighter |
-| 42 | Cosine warmdown | 1.150 | keep | Smooth LR decay |
+| # | Experiment | val_bpb | Insight |
+|---|-----------|---------|---------|
+| 0 | Baseline (batch=32) | 1.193 | Initial |
+| 4 | Matrix LR 0.08 | 1.179 | Higher LR helps |
+| 6 | Warmdown 0.5→0.3 | 1.177 | Less cooldown |
+| 17 | **Depth 8→6** | **1.158** | **Biggest single win** |
+| 25 | Depth 6→5 | 1.157 | Even smaller better |
+| 32 | Window all-short | 1.155 | Faster + better quality |
+| 42 | Cosine warmdown | 1.150 | Smooth LR decay |
 
-### Multi-Ralph on A100 SXM4 40GB (3 agents) — 20 experiments in ~1 hour
+### Run 2: Multi-Ralph on 1×A100 40GB (3 agents shared) — 20 experiments
 
-Best: **1.180 BPB concurrent** (from 1.258 concurrent baseline, -6.2%)
+Best: **1.180 BPB** (from 1.258 concurrent baseline, -6.2%)
 
-Solo baseline: 1.095 BPB (355 steps, no contention). Concurrent baseline: 1.258 BPB (141 steps, 3 agents sharing GPU).
+| Agent | Experiment | val_bpb | vs concurrent |
+|-------|-----------|---------|---------------|
+| agent2 | x0_lambda + matrix_lr 0.08 + RoPE 50K | 1.180 | -0.078 |
+| agent2 | x0_lambda init 0.05 | 1.181 | -0.077 |
+| agent1 | Matrix LR 0.04→0.08 | 1.207 | -0.051 |
+| agent2 | Warmdown 0.3 | 1.208 | -0.050 |
 
-| # | Agent | Experiment | val_bpb | vs concurrent |
-|---|-------|-----------|---------|---------------|
-| baseline | agent0 | Depth=8 batch=32 defaults | 1.095 | (solo) |
-| 013 | agent2 | x0_lambda + matrix_lr 0.08 + RoPE 50K | 1.180 | -0.078 |
-| 005 | agent2 | x0_lambda init 0.05 | 1.181 | -0.077 |
-| 013b | agent2 | best + warmdown 0.3 | 1.197 | -0.061 |
-| 011 | agent1 | x0_lambda + Matrix LR 0.08 | 1.201 | -0.057 |
-| 001 | agent1 | Higher Matrix LR 0.04→0.08 | 1.207 | -0.051 |
-| 008 | agent2 | Warmdown 0.3 | 1.208 | -0.050 |
-| 016 | agent0 | best + FINAL_LR_FRAC 0.1 | 1.211 | -0.047 |
-| 014 | agent1 | x0_lambda 0.05 + warmdown 0.3 | 1.212 | -0.046 |
-| 002 | agent2 | RoPE base 50K | 1.223 | -0.035 |
-| 010 | agent2 | weight_decay=0.05 + x0_lambda=0.05 | 1.240 | -0.018 |
-| 004 | agent1 | Embed LR 0.8 + Unembed 0.008 | 1.242 | -0.016 |
-| 015 | agent1 | x0_lambda + softcap 30 | 1.242 | -0.016 |
-| 017 | agent0 | adam_beta1=0.9 + x0_lambda | 1.252 | -0.006 |
-| 012 | agent0 | x0_lambda 0.05 + RoPE 50K | 1.253 | -0.005 |
-| 007 | agent1 | Concurrent baseline (no changes) | 1.258 | 0.000 |
-| exp003 | agent0 | Depth 9 / AR 57 | 1.259 | +0.001 |
-| 006 | agent0 | SSSSL window pattern | 1.280 | +0.022 |
-| 003 | agent0 | Warmdown 0.7 | 1.333 | +0.075 |
-| 009 | agent0 | Lower LRs all around | 1.362 | +0.104 |
+**Critical finding:** 3 agents sharing 1 GPU degraded to near-serial execution. Only 1.2× throughput, not 3×. Agents self-throttled via nvidia-smi checks. The rotating coordinator protocol needs dedicated GPUs (run 4 confirms this).
 
-## Single vs Multi: Comparison
+## What's consistent across all runs
 
-| | Single-Ralph | Multi-Ralph |
-|---|---|---|
-| **GPU** | RTX 4070 Ti SUPER (16GB) | A100 SXM4 (40GB) |
-| **Agents** | 1 | 3 concurrent |
-| **Wall clock** | ~3.5 hours | ~1 hour |
-| **Experiments** | 42 | 20 |
-| **Experiments/hour** | ~12 | ~20 |
-| **Steps per run** | ~358 | ~140-177 (GPU contention) |
-| **Best BPB** | **1.150** | 1.180 (concurrent) |
-| **Improvement** | -3.6% from baseline | -6.2% from concurrent baseline |
+Every run, regardless of hardware, agent count, or cognitive architecture, finds the same things first:
 
-### Key findings
+| Intervention | Run 1 | Run 2 | Run 3 | Run 4 |
+|---|---|---|---|---|
+| Matrix LR 0.04→0.08 | -0.014 | -0.051 vs conc | -0.018 | - |
+| Warmdown reduction | -0.016 | -0.050 vs conc | -0.008 | - |
+| Increase model depth | worse | worse | worse | - |
+| TOTAL_BATCH_SIZE halving | not tested | not tested | not tested | **-0.071** |
 
-**Single-ralph explores deep, multi-ralph explores wide.** In 32 sequential experiments, single-ralph built deep strategic knowledge — it discovered that shrinking the model from depth 8 to depth 5 was the single biggest lever (experiment 17: -0.012 BPB), something multi-ralph never tried because its agents focused on hyperparameters rather than architecture. Multi-ralph's strength was rapid combinatorial search: it tested 6 parameter combinations in the time single-ralph would have done 2, finding that x0_lambda + matrix_lr + RoPE 50K work together.
+**Claude's ML intuitions are deterministic.** Three different Claude instances, days apart, with different prompts, all converge on matrix LR and warmdown as the first wins. The gradient is learned from training data (ML papers), not computed.
 
-**Agents self-organize around constraints.** The multi-ralph agents were never told about GPU contention effects. They discovered on their own that concurrent runs get fewer steps (141 vs 355), established a "concurrent baseline" for fair comparison, and stopped comparing against the solo baseline. When early experiments tried batch=64 and OOMed, agents corrected their strategy within one round.
+**Bigger model always fails at 5-minute budget.** Not because bigger is worse — because fewer optimization steps at fixed wall clock. Depth 12 at 70 steps (1.542) vs depth 5 at 358 steps (1.157). This would flip on longer training budgets.
 
-**torch.compile creates natural staggering.** Three agents starting simultaneously should OOM during compilation (each spikes to ~17GB temporarily). Instead, variable compile times cause agents to stagger naturally — by the time the third agent compiles, the first two have settled to ~13GB steady state. This wasn't designed, it emerged.
+## LLM as Optimizer: the thesis
 
-**Throughput math favors multi-GPU.** With 3 agents sharing 1 GPU, each gets ~140 steps vs 355 solo. Total steps: 3×140=420 vs 355, only a 1.2× improvement. On 3 separate GPUs it would be 3×355=1065, a 3× improvement. The rotating coordinator protocol is designed for multi-GPU — single-GPU sharing is a valid but suboptimal test.
+Autoresearch is **gradient descent with Claude as the gradient estimator.** See [FINDINGS.md](FINDINGS.md) for the full analysis.
 
-**Persistent memory > parallel search for exploitation.** Single-ralph's `progress.md` accumulated 32 experiments of strategic insight. By experiment 17, the agent had built enough intuition to make a non-obvious leap (shrink the model). Multi-ralph agents share `strategy.md` but each starts with less context per round. The tradeoff: multi-ralph finds combinations faster, single-ralph finds structural insights.
+| Gradient Descent | Claude Search |
+|---|---|
+| Loss function | val_bpb |
+| Gradient | Claude reads result + reasons |
+| Weight update | Edit train.py |
+| Learning rate | Experiment budget (5 min) |
+| Momentum | progress.md / strategy.md |
+| Batch size | Agent count (1=SGD, 8=mini-batch) |
+
+The experiment budget is the **outer loop's learning rate**. Short budget = noisy gradient, fast iteration. Long budget = clean gradient, slow iteration. Single-ralph is SGD. Multi-ralph is mini-batch GD. The hybrid strategy is learning rate warmup.
 
 ## Architecture
 
@@ -89,80 +100,38 @@ ralph-loop/
 └── next_ideas.md     ← ranked queue of experiments to try
 ```
 
-The agent starts every iteration from **fresh context** — all state lives in files. This means it can run indefinitely without hitting context limits. Each iteration:
+Fresh context each iteration — all state lives in files. Runs indefinitely.
 
-1. Read `progress.md` and `next_ideas.md` for current state
-2. Pick the top experiment idea
-3. Edit `train.py`, commit, train for 5 minutes
-4. Keep or discard based on val_bpb
-5. Update state files with results and new insights
-6. Loop forever
-
-**Key modifications from upstream:**
-- `ralph-loop/program.md` — full protocol for persistent memory loop with keep/discard logic
-- `ralph-loop/progress.md` — tracks GPU-specific constraints, best hyperparameters, strategic insights, and full experiment history
-- `ralph-loop/next_ideas.md` — maintains a ranked queue of 5-12 experiments, re-ranked after each result
-- All state file updates happen atomically after each experiment
-
-**What the agent learned (RTX 4070 Ti, 32 experiments):**
-- Speed > capacity: depth 5 (24.6M params, 358 steps) beats depth 8 (50M params, 169 steps)
-- All default LRs need ~2x for short schedules (Matrix 0.08, Embedding 1.2, Unembedding 0.008)
-- Warmup wastes steps on short budgets (opposite of H100 findings)
-- Architecture simplification (all-short windows) improves both speed and quality
-
-### Multi-Ralph (N agents, 1 GPU)
+### Multi-Ralph (N agents, N GPUs)
 
 ```
 multi-ralph/
 ├── program-multi.md  ← rotating coordinator protocol
-├── launch.sh         ← creates worktrees + launches screen sessions
+├── launch.sh         ← single GPU, N agents sharing
+├── launch-8gpu.sh    ← multi GPU, 1 agent per GPU, cognitive architecture experiment
 ├── strategy.md       ← living search strategy (updated by coordinator)
 ├── results.tsv       ← append-only experiment log from all agents
 ├── best/train.py     ← current global best
-├── queue/            ← pending experiment specs (NNN.md files)
-├── active/           ← currently running (agent{N}.md)
+├── queue/            ← pending experiment specs
+├── active/           ← currently running
 └── done/             ← completed experiment reports
 ```
 
-**The rotating coordinator protocol:**
+**Rotating coordinator:** No central supervisor. Whichever agent finishes first reads all results, generates next batch, picks one, trains. On 8 GPUs, steady state is ~87 experiments/hour.
 
-No central supervisor. Whichever agent finishes first becomes the coordinator. The coordinator reads all results, reasons about the search space, generates the next batch of experiment tasks, then picks one and starts training.
+### Run 4 additions (cognitive architecture)
 
 ```
-Agent finishes experiment
-    │
-    ├── Report result → results.tsv + done/
-    ├── Beat global best? → Update best/train.py + strategy.md
-    │
-    ├── Queue empty?
-    │   ├── YES → Become coordinator:
-    │   │         Read ALL results → Reason about search space
-    │   │         → Generate 2-4 new tasks → Write to queue/
-    │   │         → Pick one yourself → Run it
-    │   │
-    │   └── NO → Pick next task from queue/ → Run it
-    │
-    └── Loop forever
+run4/shared/
+├── blackboard.md     ← agents post claims, responses, requests
+
+Per-agent (worktrees/agent{N}/):
+├── memory/           ← facts.md, failures.md, hunches.md
+├── scratch/          ← hypothesis.md, predictions.md
+├── judge/reviews/    ← self-review (agent 3)
+├── supervisor/       ← oversight.md, trajectory.md (agent 4)
+└── debate/           ← debate rounds (agents 5-6)
 ```
-
-**Concurrent GPU sharing:**
-
-All agents share `CUDA_VISIBLE_DEVICES=0`. Each training process uses ~12GB VRAM at `DEVICE_BATCH_SIZE=32`. On A100 40GB, 3 concurrent = ~36GB.
-
-Key constraint: **batch size is fixed at 32 and must never be changed**. Batch 64 uses 25GB per process which OOMs with 3 concurrent. The agents are told this in their prompts and in `strategy.md`.
-
-**What we discovered about multi-agent dynamics:**
-- **torch.compile stagger**: Compilation allocates extra VRAM temporarily. Agents naturally stagger because compile times vary — this prevents simultaneous OOM during compilation
-- **GPU contention reduces throughput**: Solo gets ~355 steps/5min, concurrent gets ~120-177 steps each. Total throughput still higher (3×140 = 420 vs 355)
-- **Concurrent baseline is essential**: Agents must compare against concurrent baseline (1.258), not solo baseline (1.095), to evaluate changes fairly. The agents figured this out on their own.
-- **Self-correcting search**: When early experiments tried batch=64, agents observed OOM and corrected strategy. When all round-1 results were worse than solo baseline, agents diagnosed the cause (fewer steps) and established concurrent comparison
-
-**Key modifications from upstream:**
-- `multi-ralph/launch.sh` — creates git worktrees per agent, writes agent prompts, launches screen sessions with auto-restart
-- `multi-ralph/program-multi.md` — full rotating coordinator protocol with queue claiming, result reporting, coordinator election, conflict handling
-- `multi-ralph/strategy.md` — includes hardware constraints, prior knowledge from H100 leaderboard and single-ralph results, rankings, and next steps
-- Queue-based task assignment using filesystem atomicity (`mv` for claiming)
-- Automatic coordinator election (whoever finds empty queue first)
 
 ## Quick start
 
@@ -174,19 +143,12 @@ cd autoresearch
 uv sync
 uv run prepare.py
 
-# Verify GPU works
-uv run train.py
+# Set batch size for your GPU (32 for 16GB, 64 for 40GB solo, 128 for 80GB+)
+sed -i 's/DEVICE_BATCH_SIZE = 128/DEVICE_BATCH_SIZE = 32/' train.py
+uv run train.py   # verify baseline
 ```
 
 ### Single-Ralph
-
-```bash
-# Launch claude code in the repo, then:
-# "Read ralph-loop/program.md and start the experiment loop"
-claude --dangerously-skip-permissions
-```
-
-Or headless:
 
 ```bash
 screen -dmS ralph claude -p "Read ralph-loop/program.md. Run on this machine. \
@@ -194,89 +156,54 @@ screen -dmS ralph claude -p "Read ralph-loop/program.md. Run on this machine. \
   --dangerously-skip-permissions --max-turns 200
 ```
 
-### Multi-Ralph (3 agents, 1 GPU)
+### Multi-Ralph (multi-GPU)
 
 ```bash
-# Adjust DEVICE_BATCH_SIZE in train.py for your VRAM
-# Rule: (batch_size_vram) × num_agents < total_GPU_VRAM
-# A100 40GB: batch=32 (~12GB each), 3 agents = 36GB
+# 8 GPUs: cognitive architecture experiment
+./multi-ralph/launch-8gpu.sh
 
+# Or N agents on 1 GPU (shared)
 ./multi-ralph/launch.sh 3
 ```
 
-Monitor:
+### Monitor
 
 ```bash
-screen -ls                             # list agent sessions
-screen -r ralph-agent0                 # attach (Ctrl+A D to detach)
+screen -ls                             # list sessions
 cat multi-ralph/results.tsv            # all results
-cat multi-ralph/strategy.md            # current search strategy
-watch -n 5 nvidia-smi                  # GPU memory across agents
-```
-
-Stop:
-
-```bash
-for i in $(seq 0 2); do screen -S ralph-agent$i -X quit; done
-for i in $(seq 0 2); do git worktree remove --force worktrees/agent$i; done
+cat multi-ralph/strategy.md            # search strategy
+cat run4/shared/blackboard.md          # agent collaboration
+watch -n 5 nvidia-smi                  # GPU usage
 ```
 
 ## Hardware adaptation
 
-| GPU | VRAM | Agents | Batch | Expected steps/5min | Notes |
-|-----|------|--------|-------|---------------------|-------|
-| H100 80GB | 80GB | 1 (single-ralph) | 128 | ~950 | Original target |
-| H100 96GB | 96GB | 5→2 (hybrid) | 64→128 | ~300→500 | Planned, see below |
-| A100 SXM4 40GB | 40GB | 3 (multi-ralph) | 32 | ~140 each | Tested, concurrent |
-| A100 SXM4 40GB | 40GB | 1 (single-ralph) | 64 | ~355 | Tested, solo |
-| RTX 4070 Ti SUPER | 16GB | 1 (single-ralph) | 32 | ~358 (depth 5) | Tested, 32 experiments |
-| RTX 4070 Ti SUPER | 16GB | 1 (single-ralph) | 32 | ~169 (depth 8) | Tested |
+| GPU | VRAM | Agents | Batch | Steps/5min | Notes |
+|-----|------|--------|-------|------------|-------|
+| 8×A100 SXM4 40GB | 320GB | 8 (1/GPU) | 32 | ~240 each | Run 4, CPU contention |
+| 1×A100 SXM4 40GB | 40GB | 3 (shared) | 32 | ~140 each | Run 2, GPU contention |
+| 1×A100 SXM4 40GB | 40GB | 1 (solo) | 64 | ~355 | Run 2 baseline |
+| RTX 4070 Ti SUPER | 16GB | 1 | 32 | ~170-358 | Runs 1, 3 |
+| H100 80GB | 80GB | 1 | 128 | ~950 | Karpathy's setup |
 
-For multi-ralph, calculate: `DEVICE_BATCH_SIZE` such that `per_process_VRAM × num_agents < total_VRAM`. Include ~30% overhead for torch.compile spikes.
+## Key lessons
 
-### Hybrid strategy: 96GB GPU, 4 hours
+1. **TOTAL_BATCH_SIZE is the #1 lever.** Halving from 2\*\*19 to 2\*\*18 doubles steps and was the biggest single win. Found by Karpathy (125 exp) and independently by our agent 2 (run 4).
+2. **Shared GPU serializes agents.** Multi-ralph on 1 GPU gave 1.2× throughput, not 3×. Need 1 agent per GPU.
+3. **Symlinks must replace, not nest.** Git worktrees create real directories. `ln -sfn` into existing dir creates nested symlink. Must `rm -rf` first.
+4. **Hyperparameters tuned at N steps don't transfer to 2N steps.** Old "best" config from run 2 (150 steps) was worse than baseline at run 4 (240 steps).
+5. **Claude's gradient is consistent.** Same interventions found across all runs, regardless of hardware or agent design.
+6. **Throughput > capacity at short budgets.** Smaller model + more steps beats bigger model + fewer steps at 5-minute wall clock. Flips at longer budgets.
 
-The optimal strategy combines multi-ralph's breadth with single-ralph's depth in two phases. Based on our findings: multi-ralph explores wide (finds combinations fast) but single-ralph explores deep (finds structural insights like model shrinking). A hybrid captures both.
+## Documents
 
-**Phase 1: Wide exploration (hour 1) — 5 agents, batch=64**
-
-96GB ÷ ~17GB per process = 5 agents at `DEVICE_BATCH_SIZE=64`. Each gets ~300 steps — clean enough signal to identify winners while running 5 concurrent searches. Target: ~50 experiments covering all hyperparameter dimensions + architecture variants.
-
-```bash
-sed -i 's/DEVICE_BATCH_SIZE = .*/DEVICE_BATCH_SIZE = 64/' train.py
-./multi-ralph/launch.sh 5
-```
-
-The 5 agents will cover: LR scaling (matrix, embed, unembed, scalar), schedule (warmdown, warmup, final LR frac), architecture (depth 5-12, aspect ratios, window patterns), optimizer (weight decay, adam betas), init (x0_lambda, resid_lambda), and wild cards (softcap, SwiGLU, RoPE, tied embeddings).
-
-**Phase 2: Deep exploitation (hours 2-4) — 2 agents, batch=128**
-
-Take the top findings from phase 1. Switch to 2 agents at `DEVICE_BATCH_SIZE=128` (~39GB each = 78GB). Each gets ~500+ steps — near-H100 quality. One agent combines winners, the other searches architecture.
-
-```bash
-# Stop phase 1
-for i in $(seq 0 4); do screen -S ralph-agent$i -X quit; done
-for i in $(seq 0 4); do git worktree remove --force worktrees/agent$i; done
-
-# Start phase 2
-sed -i 's/DEVICE_BATCH_SIZE = .*/DEVICE_BATCH_SIZE = 128/' train.py
-./multi-ralph/launch.sh 2
-```
-
-**Why 2 phases?**
-
-Our A100 experiment showed the problem: at 3 concurrent agents, step counts vary 120-177 (30% noise). You can't resolve a 0.003 improvement from noise at 120 steps. Phase 1 identifies *which dimensions matter* (like single-ralph discovering depth was the biggest lever at experiment 17). Phase 2 resolves the fine details with clean signal.
-
-**Expected:** ~120 experiments total (50 + 70). The breadth of phase 1 finds the structural wins early, phase 2 stacks and refines them with confidence.
-
-| Phase | Hours | Agents | Batch | Steps/run | Experiments | Purpose |
-|-------|-------|--------|-------|-----------|-------------|---------|
-| 1 | 1 | 5 | 64 | ~300 | ~50 | Broad sweep: find what matters |
-| 2 | 3 | 2 | 128 | ~500+ | ~70 | Deep refinement: stack winners |
+- [FINDINGS.md](FINDINGS.md) — LLM as Optimizer thesis, cross-run analysis, meta-parameters, serialization problem
+- [EXPERIMENT-PROTOCOL.md](EXPERIMENT-PROTOCOL.md) — Full protocol, variables, metrics, reproducibility
+- [multi-ralph/PROPOSAL-RUN4.md](multi-ralph/PROPOSAL-RUN4.md) — Run 4 design, hypotheses, predictions
 
 ## Origin
 
-Built on [autoresearch](https://github.com/karpathy/autoresearch) by @karpathy. The ralph loop pattern adds persistent memory. Multi-ralph extends it to parallel agents with rotating coordinator.
+Built on [autoresearch](https://github.com/karpathy/autoresearch) by @karpathy. The ralph loop adds persistent memory. Multi-ralph extends to parallel agents. Run 4 tests cognitive architecture — whether memory, self-review, debate, and supervision make Claude a better optimizer.
 
 ## License
 
