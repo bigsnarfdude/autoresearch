@@ -1,4 +1,4 @@
-# autoresearch (ralph fork)
+# autoresearch (ralph fork, multi-agent ralph loop pattern)
 
 > **TLDR:** 5 runs, 300+ experiments, 3 hardware configs. Claude agents autonomously optimize GPT-2 training — editing code, running experiments, keeping or discarding results. Best: **1.047 BPB** (8 agents on 8×A100, blackboard design wins). Key insight: Claude does gradient descent over hyperparameter space, and the gradient is consistent across independent runs. Extended to [AF elicitation](multi-ralph/domains/af-elicitation/) and [reactive agent dispatch](multi-ralph/conductor.sh) (Symphony-inspired).
 
