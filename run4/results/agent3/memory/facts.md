@@ -20,13 +20,17 @@
 - Depth=10 UNSTABLE and WORSE at 2**19 batch (not enough steps to converge)
 - RoPE base=200000 is a big win (1.183→1.147 at depth=8)
 - Stay with depth=8 at 2**19 batch
+- 2**17 batch is massive win: ~900 steps, best results
+- mlr=0.06 better than 0.08 or 0.10 at 2**17 batch (~900 steps)
+- warmdown=0.6 better than 0.5 at ~900 steps (1.052 vs 1.057)
+- emb_lr=0.6 slightly better than 0.9 at 2**17
 
-## Results
-- Exp 001 (baseline): depth=8, base=10000, val_bpb=1.183193, 184 steps
-- Exp 004 (new baseline): depth=8, base=200000, val_bpb=1.147283, 215 steps
-- Exp 005: depth=10, base=200000: val_bpb=1.156591 (WORSE, unstable)
-- Exp 006: +init0.68x: val_bpb=1.132935, 228 steps (KEEP)
-- Exp 007: +mlr=0.08: val_bpb=1.127178, 225 steps (KEEP)
-- Exp 008: warmdown=0.4: val_bpb=1.133067, 215 steps (DISCARD, worse at depth=8)
-- Exp 009: ar=96 (768-dim): val_bpb=1.108382, 202 steps, 17.3GB (KEEP)
-- Exp 010: +mlp_ratio=3.0: val_bpb=1.103629, 212 steps, 15.6GB (KEEP, current best)
+## Current Best Config (exp_021)
+- depth=8, ar=96, mlp=3x, RoPE200K, init0.68
+- mlr=0.06, wd=0.2, emb=0.6, batch=2**17, warmdown=0.6
+- val_bpb=1.051834, 896 steps, 15.6GB
+
+## Results (Round 2)
+- Exp 019: baseline 2**17 mlr=0.06: val_bpb=1.057498, 927 steps (KEEP)
+- Exp 020: mlr=0.10: val_bpb=1.064754, 935 steps (DISCARD, too aggressive)
+- Exp 021: warmdown=0.6: val_bpb=1.051834, 896 steps (KEEP, NEW BEST)

@@ -2,22 +2,22 @@
 
 - Default baseline: ~1.095 val_bpb at 355 steps (solo run)
 - 8-agent concurrent baseline: ~1.133 at 213 steps (CPU/IO contention)
-- Triple combo (x0+mlr0.08+rope50k): 1.118 at 240 steps — worse than solo default
-- weight_decay=0.05 on best config: 1.126 (agent1)
-- **TOTAL_BATCH_SIZE=2**18: 1.1087 at 395 steps — GLOBAL BEST** (agent2 exp1)
-  - Nearly doubles steps (395 vs 213) under 8-agent contention
-  - 11.7GB VRAM, well within budget
-- weight_decay=0.05 on 2**18: 1.1074 at 434 steps — marginal improvement over wd=0.2
-- RoPE base 200K on 2**18: 1.098 (agent1) — CURRENT GLOBAL BEST
-- init_scale=0.68 on 2**18+RoPE200K: 1.1003 (confirms ~0.008 improvement)
-- depth=10 on 2**18+RoPE200K+init0.68: 1.0876, 372 steps, 17.8GB
-  - Agent6 got 1.0841 at depth=10+RoPE200K+init0.68 at 2**19 (388 steps)
-  - 2**18 batch helps LESS at depth=10 (per-step cost higher, fewer bonus steps)
-- HEAD_DIM=64: 1.107 (agent1) — WORSE than HEAD_DIM=128 at depth=8
-- EMBEDDING_LR=1.0 vs 0.6: neutral at depth=10 (1.0854 vs 1.0855)
-- **MLP_ratio=3x at depth=10: 1.0799, 431 steps, 16.1GB — NEW GLOBAL BEST**
-  - 3x MLP gives ~12% more steps than 4x (431 vs 386)
-  - Smaller model (77.7M vs 85.9M) trains faster per step
-  - The extra steps more than compensate for less capacity
+- **Batch size optimization:**
+  - 2**19: ~1.133 at 213 steps
+  - 2**18: ~1.075 at 418 steps
+  - **2**17: 1.0482 at 963 steps (with mlr=0.04)** — GLOBAL BEST
+  - 2**16: 1.068 at 1735 steps — too noisy (grad_accum=1)
+- **mlr=0.04 is optimal at 2**17 batch (900+ steps)**
+  - mlr=0.08 at 2**17: 1.062 (870 steps)
+  - mlr=0.04 at 2**17: 1.048 (963 steps) — lower LR → more steps + better convergence
+  - mlr=0.08 was only optimal for ~200-400 step regime
+- RoPE base 200K: confirmed win
+- init_scale=0.68: confirmed win
+- MLP_ratio=3x: wins at depth=8 AR=96 (faster steps)
+- **Global best config: depth=8 AR=96 MLP3x mlr=0.04 2**17 wd=0.2 RoPE200K init0.68**
+  - 84.9M params, 15.6GB VRAM, 963 steps
+- wd=0.2 works better than wd=0.05 at depth=8 AR=96
+- AR=96 (768-dim) is the sweet spot (AR=112 worse per agent3)
+- WARMDOWN_RATIO=0.5 optimal
 - DEVICE_BATCH_SIZE=32 is fixed constraint
-- At depth=8: 2**18 gives ~395-434 steps; at depth=10 4xMLP: ~372-392; depth=10 3xMLP: ~431
+- SwiGLU MLP 2x interesting at ~200 steps (agent6) — untested at 2**17

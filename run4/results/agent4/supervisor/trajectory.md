@@ -1,19 +1,38 @@
-# Trajectory Tracking — Round 2
+# Trajectory Tracking — Round 9
 
-## Agent Results Timeline
-| round | agent0 | agent1 | agent2 | agent3 | agent4 | agent5 | agent6 | agent7 |
-|-------|--------|--------|--------|--------|--------|--------|--------|--------|
-| 1 | 1.180 | 1.144 | 1.109 | 1.183 | 1.180 | 1.187 | 1.172 | 1.141 |
-| 2 | 1.155 | **1.098** | 1.107 | - | 1.156 | - | - | - |
+## Agent Best Results (sorted)
+| agent | best_bpb | steps | key config |
+|-------|----------|-------|------------|
+| agent4 | 1.0482 | 953 | depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.2 |
+| agent2 | 1.0482 | 963 | depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.2 |
+| agent6 | 1.0491 | 885 | depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.1 |
+| agent5 | 1.0497 | 904 | depth=8 AR=96 MLP3x 2**17 mlr=0.03 wd=0.2 |
+| agent3 | 1.0499 | 905 | depth=8 AR=96 MLP3x 2**17 mlr=0.04 warmdown=0.6 |
+| agent7 | 1.0751 | 289 | depth=8 AR=96 MLP2x batch=64 |
+| agent1 | 1.085 | - | various combos on 2**18 |
+| agent0 | 1.123 | - | depth=10 AR=76 MLP2.5x |
 
-## Winning Agent Design
-- **agent1 (memory)** leads at 1.098 with RoPE base 200K — single biggest win found
-- agent2 (blackboard) competitive at 1.107 via batch size reduction
-- agent0 (vanilla) and agent4 (supervisor) tied on depth=10
+## Progression of Global Best
+| round | best_bpb | agent | key change |
+|-------|----------|-------|------------|
+| 1 | 1.133 | agent2 | TOTAL_BATCH_SIZE=2**18 |
+| 2 | 1.098 | agent1 | RoPE 200K |
+| 3 | 1.083 | agent6 | depth=10 + RoPE200K + init0.68 |
+| 4 | 1.080 | agent2 | MLP 3x at depth=10 |
+| 5 | 1.079 | agent2 | AR=76 depth=10 MLP3x |
+| 6 | 1.076 | agent2 | depth=8 AR=96 MLP3x wd=0.2 |
+| 7 | 1.075 | agent2 | + mlr=0.08 |
+| 8 | 1.055 | agent4 | TOTAL_BATCH_SIZE=2**17 |
+| 9 | 1.048 | agent2/agent4 | mlr=0.04 |
 
-## Key Discovery
-RoPE base 200K is the #1 improvement. Must be combined with other wins (depth, wd, etc.)
+## Convergence Status
+- **CONVERGED** at 1.048-1.050
+- All agents at 2**17 produce near-identical results (within 0.002)
+- Hyperparameter tuning space is exhausted (warmdown, mlr, wd all explored)
+- Need structural/architectural changes to break through
 
-## Convergence Assessment
-- Still early. Only 2 rounds. The RoPE discovery suggests large untapped improvement space.
-- Next priority: combine winning interventions (RoPE + depth + wd + LR)
+## Key Insight: Batch Size was King
+Batch size scaling accounted for ~0.085 of the ~0.132 total improvement:
+- 2**19 → 2**18: -0.058 BPB
+- 2**18 → 2**17: -0.020 BPB
+- mlr tuning at 2**17: -0.007 BPB

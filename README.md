@@ -13,24 +13,26 @@ Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding
 | 1 | RTX 4070 Ti 16GB | 1 | single-ralph | 42 | 1.150 | Depth reduction (speed > capacity) |
 | 2 | 1×A100 40GB | 3 shared | multi-ralph | 20 | 1.180 | x0_lambda + combination search |
 | 3 | RTX 4070 Ti 16GB | 1 | single-ralph | 5+ | 1.175 | Reproduces runs 1-2 findings |
-| 4 | 8×A100 40GB | 8 (1/GPU) | 4 architectures | 91+ | **1.080** | Blackboard agent wins; matches Karpathy's #1 |
+| 4 | 8×A100 40GB | 8→6 agents | 4 architectures | **186** | **1.047** | Blackboard wins; batch halving to 2\*\*17; all agents converge |
 
-### Run 4: 8 agents, 8×A100, 4 cognitive architectures — 91 experiments
+### Run 4: 8 agents, 8×A100, 4 cognitive architectures — 186 experiments (FINAL)
 
-8 agents with different "brains" on 8 dedicated GPUs. **Blackboard design wins.** Agent 2 independently discovered halving TOTAL_BATCH_SIZE — the same #1 win from [Karpathy's 125-experiment H100 run](https://github.com/karpathy/autoresearch/pull/2) — then combined it with MLP 3x, depth=10, and wider AR=76 to reach 1.080.
+8 agents with different "brains" on 8 dedicated GPUs (reduced to 6 mid-run to free GPUs 0-1 for domain transfer experiment). **Blackboard design wins.** Agents independently discovered batch halving (2\*\*19 → 2\*\*18 → 2\*\*17), matching [Karpathy's 125-experiment H100 run](https://github.com/karpathy/autoresearch/pull/2). Five agents converged to within 0.002 BPB of each other.
 
-| Rank | Agent | Design | Exps | Best | Hit rate | Key finding |
-|------|-------|--------|------|------|----------|-------------|
-| 1 | **agent2** | **Blackboard** | 11 | **1.080** | 64% | MLP 3x + depth10 + 2\*\*18 + AR=76 |
-| 2 | agent1 | Memory | 12 | 1.082 | 33% | RoPE 200K + init 0.68 + shortwin |
-| 3 | agent6 | Debate-B | 10 | 1.083 | ~40% | Combined others' wins (challenger role) |
-| 4 | agent7 | BigBatch | 11 | 1.095 | 55% | batch=64 capacity test |
-| 5 | agent5 | Debate-A | 10 | 1.097 | 20% | Width path: ar=96 mlp3x warmup=0 |
-| 6 | agent3 | Judge | 8 | 1.104 | 50% | Confirmed ar=96 win, slowest throughput |
-| 7 | agent4 | Supervisor | 11 | 1.121 | 73% | Good directives, own experiments unstable |
-| 8 | agent0 | Vanilla | 12 | 1.152 | 17% | **9 reverts — proves memory matters** |
+| Rank | Agent | Design | Exps | Best | Key finding |
+|------|-------|--------|------|------|-------------|
+| 1 | **agent2** | **Blackboard** | 28 | **1.047** | Led discoveries: batch halving, MLP 3x, AR=96 width path |
+| 2 | agent5 | Debate-A | 26 | 1.048 | Recovered after unblock; found mlr=0.03 + wd=0.1 |
+| 3 | agent3 | Judge | 16 | 1.048 | Slowest throughput but converged after unblock |
+| 4 | agent4 | Supervisor | 26 | 1.048 | Unblocked → immediately competitive; good directives |
+| 5 | agent6 | Debate-B | 27 | 1.048 | Consistent challenger; combined others' discoveries |
+| 6 | agent7 | BigBatch | 28 | 1.075 | batch=64 path; found mlr=0.12 optimal for large batch |
+| 7 | agent1 | Memory | 17 | 1.082 | Found RoPE 200K (early #1 win); stopped mid-run |
+| 8 | agent0 | Vanilla | 18 | 1.123 | **No memory = repeated failures; proves architecture matters** |
 
-**Cross-pollination in action:** Agent 1 found RoPE 200K. Agent 2 found batch halving. Agent 6 combined both with init 0.68. No single agent found the full winning combination — the system did. Agent 0 (vanilla, no memory) tried the same failing experiment 9 times.
+**The convergence story:** Early on, blackboard (1.080) led memory (1.082) by a hair. After operator unblocked TOTAL\_BATCH\_SIZE for constrained agents, everyone converged to 1.048 within 50 experiments. The bottleneck wasn't compute — it was information flow.
+
+**Winning config:** depth=8, AR=96, MLP 3x, TOTAL\_BATCH\_SIZE=2\*\*17, matrix\_lr=0.03-0.04, wd=0.1-0.2, ~930 steps.
 
 See [multi-ralph/RESEARCHRALPH-V2.md](multi-ralph/RESEARCHRALPH-V2.md) for the distilled v2 architecture.
 

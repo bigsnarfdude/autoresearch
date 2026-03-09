@@ -150,3 +150,52 @@ exp19	1.055344	15.6	keep	**NEW GLOBAL BEST** depth=8 AR=96 MLP3x 2**17 mlr=0.08 
 d8-ar96-swiglu2x	1.095668	15.6	keep	**depth=8 AR=96 SwiGLU MLP2x** mlr=0.08 at 2**19, 244 steps	agent6	debate-B
 exp_018	batch=2**17	1.061152	919	15629	keep	NEW BEST: 2**17 batch, 919 steps, near global best
 c4b75f4	1.106801	15.6	discard	depth8_ar96_mlp2x_swiglu_mlr0.08_wd0.2_batch2_18	agent5	debate-A
+c4b75f4	1.099345	25.4	discard	depth=8 AR=96 MLP1.5x batch=64 (too small, MLP2x better)	agent7	bigbatch
+c4b75f4	1.048168	15.6	keep	**NEW GLOBAL BEST** depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.2, 963 steps	agent2	blackboard
+exp20	1.052760	15.6	keep	mlr=0.06 at 2**17 — beats 0.08 (1.055) but agent2 found 0.04 even better (1.048)	agent4	supervisor
+d10-ar64-swiglu2x	1.099199	16.1	keep	depth=10 AR=64 SwiGLU MLP2x mlr=0.04 wd=0.05 at 2**19, 250 steps	agent6	debate-B
+c4b75f4	1.080727	15.6	calibrate	depth8_ar96_mlp3x_mlr0.08_wd0.2_batch2_18_calibration	agent5	debate-A
+exp_019	1.057498	15.6	keep	baseline 2**17 emb=0.6 (best/train.py as-is), 927 steps	agent3	blackboard+judge
+c4b75f4	1.114682	33.2	discard	depth=10 AR=76 MLP2x batch=64 (depth=8 AR=96 much better)	agent7	bigbatch
+c4b75f4	1.048214	15.6	discard	depth=8 AR=96 MLP3x 2**17 mlr=0.02 wd=0.2, 924 steps (same as mlr=0.04, stick with 0.04)	agent2	blackboard
+d10-ar76-swiglu2x	1.157570	19.2	discard	depth=10 AR=76 SwiGLU MLP2x too slow (206 steps)	agent6	debate-B
+c4b75f4	1.057669	15.6	keep	**NEW AGENT5 BEST** depth8_ar96_mlp3x_mlr0.06_wd0.2_batch2_17_913steps	agent5	debate-A
+exp_020	1.064754	15.6	discard	mlr=0.10 at 2**17 (WORSE than mlr=0.06 baseline), 935 steps	agent3	blackboard+judge
+c4b75f4	1.101995	27.0	discard	depth=8 AR=96 MLP2x wd=0.05 batch=64 (wd=0.2 much better)	agent7	bigbatch
+c4b75f4	1.056605	15.6	discard	SwiGLU MLP2x depth=8 AR=96 2**17 mlr=0.04 wd=0.2, 932 steps (ReLU^2 MLP3x better)	agent2	blackboard
+exp21	1.048167	15.6	keep	**NEW PERSONAL BEST** mlr=0.04 2**17 depth=8 AR=96 MLP3x wd=0.2, 953 steps (matches agent2 global best)	agent4	supervisor
+c4b75f4	1.059165	15.4	discard	depth8_ar96_mlp3x_mlr0.06_wd0.2_batch2_16_1732steps	agent5	debate-A
+exp_021	1.051834	15.6	keep	**NEW BEST** warmdown=0.6 at 2**17 (beats 0.5), 896 steps	agent3	blackboard+judge
+d8-ar96-swiglu2x-b17	1.058071	15.6	keep	depth=8 AR=96 SwiGLU MLP2x 2**17 mlr=0.04 wd=0.2, 871 steps	agent6	debate-B
+c4b75f4	1.090105	27.0	discard	depth=8 AR=96 MLP2x wd=0.3 batch=64 (wd=0.2 better)	agent7	bigbatch
+c4b75f4	1.052626	15.6	discard	warmdown=0.6 depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.2, 916 steps (0.5 better at mlr=0.04)	agent2	blackboard
+exp22	1.050856	15.6	discard	warmdown=0.6 WORSE than 0.5 (1.051 vs 1.048), 909 steps	agent4	supervisor
+c4b75f4	1.050077	15.6	keep	**NEW AGENT5 BEST** depth8_ar96_mlp3x_mlr0.04_wd0.2_batch2_17_903steps	agent5	debate-A
+exp_022	1.051742	15.6	keep-but-confounded	warmdown=0.7 at 2**17 (same as 0.6, both beat 0.5), 891 steps	agent3	blackboard+judge
+c4b75f4	1.081649	20.9	discard	depth=6 AR=128 MLP2x batch=64 (too shallow, depth=8 better)	agent7	bigbatch
+d8-ar96-mlr04-wd06	1.050606	15.6	keep	depth=8 AR=96 MLP3x 2**17 mlr=0.04 warmdown=0.6 wd=0.2, 869 steps	agent6	debate-B
+c4b75f4	1.051511	15.6	discard	wd=0.1 depth=8 AR=96 MLP3x 2**17 mlr=0.04, 906 steps (wd=0.2 better)	agent2	blackboard
+exp23	1.057702	15.6	discard	HEAD_DIM=64 (12 heads) WORSE: 1.058 vs 1.048, 883 steps (slower + less expressive rotary)	agent4	supervisor
+c4b75f4	1.049703	15.6	keep	depth8_ar96_mlp3x_mlr0.03_wd0.2_batch2_17_904steps	agent5	debate-A
+exp_023	1.054374	15.6	discard	wd=0.1+warmdown=0.6 (WORSE than wd=0.2), 864 steps	agent3	blackboard+judge
+d8-ar96-mlr04-wd01	1.049106	15.6	keep	depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.1 warmdown=0.5, 885 steps	agent6	debate-B
+exp24	1.053607	15.6	discard	warmdown=0.4 WORSE than 0.5 (1.054 vs 1.048), 886 steps	agent4	supervisor
+c4b75f4	1.053900	15.6	discard	wd=0.3 depth=8 AR=96 MLP3x 2**17 mlr=0.04, 881 steps (wd=0.2 optimal)	agent2	blackboard
+c4b75f4	1.050217	15.6	discard	depth8_ar96_mlp3x_mlr0.02_wd0.2_batch2_17_925steps	agent5	debate-A
+exp_024	1.053424	15.6	discard	final_lr=0.05+warmdown=0.6 (worse than 0.0), 889 steps	agent3	blackboard+judge
+c4b75f4	1.080376	27.0	discard	depth=8 AR=96 MLP2x mlr=0.08 emb=0.6 batch=64 (mlr=0.12+emb=0.9 better)	agent7	bigbatch
+c4b75f4	1.083767	27.0	discard	depth=8 AR=96 MLP2x warmdown=0.6 batch=64 (0.5 better)	agent7	bigbatch
+d8-ar96-x0_05	1.055609	15.6	discard	depth=8 AR=96 MLP3x 2**17 mlr=0.04 x0_lambda=0.05 (0.1 better), 916 steps	agent6	debate-B
+exp25	1.054850	15.6	discard	wd=0.3 WORSE than 0.2 (1.055 vs 1.048), 886 steps	agent4	supervisor
+c4b75f4	1.066145	19.2	discard	depth=10 AR=76 MLP3x 2**17 mlr=0.02 wd=0.2, 772 steps (too slow, d8 AR96 wins)	agent2	blackboard
+c4b75f4	1.050459	15.6	discard	depth8_ar96_mlp3x_mlr0.03_wd0.2_warmdown0.4_batch2_17	agent5	debate-A
+exp_025	1.049858	15.6	keep	**NEW BEST** mlr=0.04+warmdown=0.6 at 2**17, 905 steps	agent3	blackboard+judge
+c4b75f4	1.082042	27.5	discard	depth=8 AR=96 MLP2.25x batch=64 (MLP2x better)	agent7	bigbatch
+d8-ar96-warmdown45	1.062089	15.6	discard	depth=8 AR=96 MLP3x 2**17 mlr=0.04 warmdown=0.45 WORSE (0.5 better), 930 steps	agent6	debate-B
+exp26	1.055222	15.6	discard	SSLL window WORSE: slower (882 vs 953 steps) and worse BPB (1.055 vs 1.048)	agent4	supervisor
+c4b75f4	1.055717	15.6	discard	SSLL window depth=8 AR=96 MLP3x 2**17 mlr=0.04, 881 steps (SSSL better)	agent2	blackboard
+c4b75f4	1.047695	15.6	keep	**NEW BEST** depth8_ar96_mlp3x_mlr0.03_wd0.1_batch2_17	agent5	debate-A
+exp_026	1.048119	15.6	keep	**NEW BEST** mlr=0.03+warmdown=0.6 at 2**17, 933 steps	agent3	blackboard+judge
+c4b75f4	1.093418	27.1	discard	depth=8 AR=96 MLP2x HEAD_DIM=64 batch=64 (worse)	agent7	bigbatch
+d8-ar96-finallr02	1.048339	15.6	discard	depth=8 AR=96 MLP3x 2**17 mlr=0.04 final_lr_frac=0.02 (neutral vs 0.0), 928 steps	agent6	debate-B
+c4b75f4	1.046565	15.6	keep	**NEW GLOBAL BEST** all-short-window depth=8 AR=96 MLP3x 2**17 mlr=0.04 wd=0.2, 945 steps	agent2	blackboard
