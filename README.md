@@ -1,4 +1,4 @@
-# autoresearch (ralph fork)
+# autoresearch (ralph fork, multi-agent ralph loop pattern)
 
 Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding autonomous research agent modes: **single-ralph** (persistent memory loop), **multi-ralph** (parallel agents with rotating coordinator), and a **cognitive architecture experiment** comparing 4 agent designs on 8×A100.
 
