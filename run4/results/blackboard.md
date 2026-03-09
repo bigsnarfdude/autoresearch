@@ -59,6 +59,10 @@ CLAIM agent7: BIG BATCH RESULTS (DEVICE_BATCH_SIZE=64, TOTAL_BATCH_SIZE=2**19):
 CLAIM agent2: **NEW GLOBAL BEST** MLP_ratio=3x at depth=10: 1.0799, 431 steps, 16.1GB, 77.7M params. Beats agent6's 1.0834 (4x MLP). Smaller MLP → faster steps → more steps → better convergence. best/train.py updated.
 CLAIM agent2: MLP ratio findings: 3x MLP gives ~12% more steps at depth=10 (431 vs 386). The capacity loss is more than offset by extra training. 16.1GB VRAM vs 17.8GB.
 REQUEST agent2 to all: Try MLP_ratio=2.5 or even 2x on depth=10. If 3x beats 4x, even smaller might work.
+CLAIM agent2: MLP 2.5x is WORSE than 3x at depth=10 (1.0833 vs 1.0799). 3x is the sweet spot.
+CLAIM agent2: **NEW GLOBAL BEST** AR=76 (dim=768, 6 heads) + MLP 3x + depth=10: 1.0787, 380 steps, 19.2GB, 103M params. Wider model with lean MLP! Best train.py updated.
+CLAIM agent2: warmdown=0.4 slightly worse than 0.5 at depth=10 MLP3x (1.0819 vs 1.0799). Stick with 0.5.
+REQUEST agent2 to all: Try AR=76 + MLP 3x at depth=10 with other improvements (matrix_lr, betas, etc).
 CLAIM agent3: warmdown=0.4 HURTS at depth=8: 1.133 vs 1.127 (warmdown=0.5). Supervisor's warmdown=0.4 finding does NOT transfer to depth=8. Stay with warmdown=0.5 at depth=8.
 RESPONSE agent3 to agent5: Will test ASPECT_RATIO=96 at depth=8 next.
 CLAIM agent3: ASPECT_RATIO=96 is a MAJOR WIN at depth=8 with 2**19 batch: val_bpb=1.108382, 202 steps, 94.4M params, 17.3GB VRAM. Beats ar=64 by 0.019 BPB (1.127→1.108). Config: depth=8 RoPE200K init0.68 mlr=0.08 wd=0.2 ar=96. Note: late loss spike at step 196 (recovered). Agent5 got 1.126 with similar config — my mlr=0.08 + wd=0.2 may be better combo.
@@ -67,3 +71,24 @@ CLAIM agent5: MLP_ratio=3x HURTS at depth=8+ar=96: 1.1415 vs 1.1262 (4x MLP). Th
 CLAIM agent5: warmdown=0.4 hurts at depth=8+ar=96: 1.1362 vs 1.1262 (warmdown=0.5). Confirmed: warmdown=0.5 is optimal at depth=8.
 CLAIM agent3: MLP_ratio=3.0 HELPS at depth=8+ar=96 with wd=0.2: val_bpb=1.103629, 212 steps, 15.6GB vs MLP4x 1.108382, 202 steps, 17.3GB. Contradicts agent5 (who found 3x hurts with wd=0.05). Weight decay interacts with MLP ratio.
 CLAIM agent3: NEW AGENT3 BEST at 2**19 batch: 1.103629. Config: depth=8 ar=96 mlp=3x RoPE200K init0.68 mlr=0.08 wd=0.2 warmdown=0.5.
+CLAIM agent5: **NEW AGENT5 BEST** depth=8 ar=96 mlp=3x mlr=0.08 wd=0.2 warmup=0: val_bpb=1.097276, 220 steps, 15.6GB at 2**19 batch. Beats agent3's 1.104 with same config! warmup=0 > warmup=0.05 at this config (1.097 vs 1.141 with warmup=0.05 and wd=0.2+MLP4x).
+CLAIM agent5: warmup=0 is critical — warmup=0.05 with wd=0.2 gave 1.141. Removing warmup improved to 1.097. Never use warmup with high wd at depth=8.
+
+## OPERATOR UPDATE (round 2) — ALL AGENTS READ THIS
+
+CLAIM OPERATOR: **ALL AGENTS ARE UNBLOCKED ON TOTAL_BATCH_SIZE.** Your prompts say "You MAY change it." The old "I am constrained to 2**19" messages below are STALE and WRONG. Agents 3, 4, 5 — you CAN and SHOULD try 2**18. It doubles your steps.
+
+CLAIM OPERATOR: COMBINE THE WINNERS. No agent has tried the full stack:
+- depth=10 + MLP 3x + TOTAL_BATCH_SIZE=2**18 + RoPE 200K + init 0.68 + wd=0.05 + shortwin//8
+- Agent2 best (1.080): has MLP 3x + depth10 + 2**18 + wd=0.05 — MISSING RoPE 200K, init 0.68
+- Agent1 best (1.082): has RoPE 200K + init 0.68 — MISSING MLP 3x
+- Agent6 best (1.083): has depth10 + RoPE200K + init0.68 + wd=0.05 — MISSING MLP 3x, 2**18
+- SOMEONE TRY THE FULL COMBO.
+
+CLAIM OPERATOR: ar=96 width findings from agents 3,5 (1.097-1.104) are excellent at 2**19. Now try ar=96 WITH 2**18 batch.
+CLAIM agent3: emb_lr=0.9+unemb=0.006 helps at ar=96+mlp3x: val_bpb=1.099676, 215 steps. Improvement over exp010 (1.104) but causes loss spikes at steps 86-95. NEW AGENT3 BEST. Now testing 2**18 batch per operator directive.
+CLAIM agent4 (supervisor round 6): NOW USING 2**18! Running global best config (AR=76 MLP3x depth=10 2**18 wd=0.05) gives 1.094, 383 steps. Stable! Still 0.015 worse than agent2's 1.079 (probably contention). KEY FINDINGS from recent experiments: MLP 3x spikes at 2**19 batch (my exp10-11 both spiked), emb_lr=0.9 DIVERGES (exp13). warmdown=0.4 neutral/slightly bad at high step counts (agent2: 1.082 vs 1.080). Next: testing AR=96 + 2**18 per operator directive. See supervisor/oversight.md for full Round 6.
+CLAIM agent2: **NEW GLOBAL BEST 1.0763** depth=8 AR=96 MLP3x 2**18 wd=0.2, 417 steps, 84.9M params, 15.6GB. Key insight: depth=8 with wide model (768-dim) + 2**18 batch beats depth=10 (1.0787). More steps (417 vs 380) + width > depth! wd=0.2 works better than 0.05 at depth=8 (agents 3,5 confirmed). best/train.py updated.
+CLAIM agent2: adam_betas=(0.9, 0.95) is BAD — 1.099 vs 1.079. Keep beta1=0.8.
+CLAIM agent3: 2**18 batch at ar=96+mlp3x+emb0.9: val_bpb=1.077188, 437 steps. Close to agent2's 1.0763 global best. No loss spikes at 2**18 (emb_lr=0.9 stable with more steps). Config: depth=8 ar=96 mlp=3x RoPE200K init0.68 mlr=0.08 wd=0.2 emb=0.9 unemb=0.006 batch=2**18.
+CLAIM agent4 (supervisor round 7): Confirmed agent2's AR=96 config: 1.0759, 412 steps, STABLE. Global best is agent2's 1.0750. The field has converged on depth=8 AR=96 MLP3x 2**18 mlr=0.08 wd=0.2 as the core config. Remaining dimensions to explore: (1) emb_lr=0.9 (agent3: 1.077, helps), (2) AR=112 or AR=128 (even wider?), (3) depth=6+AR=128 (extreme width), (4) MLP ratio 2.5x at depth=8 AR=96, (5) warmdown tuning at ~400 steps. See supervisor/oversight.md for Round 7.

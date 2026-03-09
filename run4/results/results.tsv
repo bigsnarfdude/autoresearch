@@ -105,3 +105,21 @@ c4b75f4	1.098711	19.2	discard	adam_betas=(0.9,0.95) on best — much worse	agent
 c4b75f4	1.098282	15.6	keep	depth8_ar96_mlp3x_mlr0.08_wd0.2_emb0.9_unemb0.006	agent5	debate-A
 exp_012	emb_lr=0.9+unemb=0.006	1.099676	215	15629	keep	Higher emb LR helps but causes spikes at steps 86-95
 c4b75f4	1.108140	29.6	discard	depth=10 batch=64 MLP2.5x RoPE50K (RoPE200K much better with MLP2.5x)	agent7	bigbatch
+exp015	1.101	19.2	discard	window_pattern=SL on global best	agent1	memory
+exp14	1.093788	19.2	keep	GLOBAL BEST CONFIG depth=10 AR=76 MLP3x 2**18 wd=0.05 STABLE 383 steps	agent4	supervisor
+c4b75f4	1.136044	18.8	keep	depth=10 aspect=76 mlp3 wd=0.05 shortwin8 rope200k	agent0	vanilla
+c4b75f4	1.076284	15.6	keep	**NEW BEST** depth=8 AR=96 MLP3x 2**18 wd=0.2, 417 steps, 84.9M	agent2	blackboard
+c4b75f4	1.178434	19.2	regress	depth10_ar76_mlp3x_mlr0.04_wd0.2_batch2_19	agent5	debate-A
+d10-ar76-wd03	1.150409	19.2	discard	depth=10 AR=76 warmdown=0.3 WORSE	agent6	debate-B
+d10-ar76-mlp3	1.128362	19.2	discard	depth=10 AR=76 MLP3x at 2**19 (196 steps, contention)	agent6	debate-B
+d10-mlp3-rerun	1.143761	16.1	discard	depth=10 MLP3x re-run still slow (205 steps)	agent6	debate-B
+exp_013	batch=2**18	1.077188	437	15629	keep	MASSIVE WIN: 2x steps, near global best
+exp016	1.094	19.2	discard	warmdown=0.67 on wider best (AR76)	agent1	memory
+c4b75f4	1.074969	15.6	keep	**NEW BEST** depth=8 AR=96 MLP3x mlr=0.08 2**18 wd=0.2, 418 steps	agent2	blackboard
+c4b75f4	1.217487	29.7	revert	depth=12 aspect=76 mlp3 too slow	agent0	vanilla
+exp15	1.075872	15.6	keep	depth=8 AR=96 MLP3x mlr=0.08 2**18 wd=0.2 RoPE200K init0.68 STABLE 412 steps	agent4	supervisor
+c4b75f4	1.095125	29.6	discard	depth=10 batch=64 MLP2.5x mlr=0.10 (0.12 slightly better)	agent7	bigbatch
+c4b75f4	1.112797	29.6	discard	depth=10 batch=64 MLP2.5x mlr=0.14 (too high)	agent7	bigbatch
+c4b75f4	1.112391	15.6	regress	depth8_ar96_mlp3x_mlr0.08_wd0.2_beta0.9	agent5	debate-A
+d8-ar96-mlp3	1.113429	15.6	done	depth=8 AR=96 MLP3x at 2**19, 202 steps	agent6	debate-B
+exp_014	emb_lr=0.6(revert)	1.087628	423	15629	discard	emb_lr=0.6 worse than 0.9 by 0.010 BPB
