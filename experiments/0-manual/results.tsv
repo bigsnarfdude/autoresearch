@@ -1,0 +1,47 @@
+commit	val_bpb	memory_gb	status	description
+d0ec7ef	1.191909	6.0	keep	baseline (batch_size=16 for RTX 4070 Ti)
+b591219	1.192676	11.4	keep	baseline with batch_size=32 (max VRAM fit)
+ae999a9	1.244263	11.4	discard	add 5% LR warmup
+b406d3a	0.000000	0.0	crash	depth 12 OOM at batch=32
+c8743c4	0.000000	0.0	crash	depth 10 OOM at batch=32
+e059cac	1.373499	9.2	discard	depth 10 batch=16 (too few steps)
+fb413c8	1.181332	11.4	keep	increase matrix LR 0.06 embedding LR 0.9
+29fb051	1.178592	11.4	keep	matrix LR 0.08 embedding LR 1.2
+f19f930	1.183606	11.4	discard	matrix LR 0.12 embedding LR 1.8 (too high)
+0ec0052	1.177074	11.4	keep	warmdown 0.5->0.3
+ca36c13	1.180232	11.4	discard	warmdown 0.3->0.15 (worse than 0.3)
+b92c323	1.174359	11.4	keep	FINAL_LR_FRAC 0.0->0.1
+7f6fc1c	1.174092	11.4	keep	FINAL_LR_FRAC 0.1->0.2
+ad0d54c	1.174884	11.4	discard	FINAL_LR_FRAC 0.2->0.3 (worse)
+3b830cb	1.175010	11.4	discard	weight decay 0.2->0.1
+d7111c4	1.170299	11.4	keep	unembedding LR 0.004->0.008
+6f37918	1.176043	11.4	discard	unembedding LR 0.008->0.016 (too high)
+ef6b350	1.177892	11.4	discard	softcap 15->30
+f92395c	1.169471	11.4	keep	scalar LR 0.5->1.0
+d11e461	1.169895	11.4	discard	adam beta1 0.8->0.85
+18231f2	1.157848	6.9	keep	depth 8->6 (26M params 310 steps)
+ed07797	1.184572	3.6	discard	depth 6->4 (too small 11.5M params)
+694982a	1.184304	13.4	discard	batch 32->64 at depth 6 (worse)
+93aa451	1.175643	6.9	discard	total batch 2**19->2**18 (noisier)
+3a5e0c8	1.159808	6.9	discard	SwiGLU activation (marginally worse)
+18480b0	1.159303	6.9	discard	window SSSL->SSLL (marginally worse)
+87bd8e0	1.157981	6.9	discard	matrix LR 0.08->0.10 (no improvement)
+d6c10af	1.159335	6.9	discard	embedding LR 1.2->1.5 (worse)
+10185ac	1.157145	5.9	keep	depth 6->5 (24.6M 356 steps)
+4777929	1.215677	10.2	discard	depth 5->7 (too deep too slow)
+c88f90c	1.178817	7.6	discard	aspect 64->80 at depth 5 (slower)
+ac7af8a	1.166972	4.3	discard	aspect 64->48 at depth 5 (too small)
+777838d	1.172555	5.1	discard	HEAD_DIM 128->64 (too small at 19.3M)
+db730d9	1.159932	5.9	discard	warmdown 0.3->0.2 (worse)
+e590875	1.160776	5.9	discard	window all-long L (slower)
+1d4122d	1.154745	5.9	keep	window all-short S (last layer still long)
+f7ddad4	1.158403	5.9	discard	matrix LR 0.12 at depth 5 (still too high)
+f886d9d	1.157864	5.9	discard	weight decay 0.2->0.3 (worse)
+8f8913d	1.152740	5.9	keep	muon momentum warmup 300->100 steps
+fbc9aa1	1.155855	5.9	discard	muon momentum warmup 100->50 steps (too fast)
+73d6818	1.151844	5.9	keep	softcap 15->10
+715087c	1.150743	5.9	keep	softcap 10->8
+0e7bac1	1.165857	5.9	discard	softcap 8->6 (too tight)
+e5c599f	1.152022	5.9	discard	x0_lambdas init 0.1->0.2
+0f00bb6	1.150916	5.9	discard	muon momentum start 0.85->0.90 (no improvement)
+bdf134f	1.150405	5.9	keep	cosine warmdown instead of linear
