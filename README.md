@@ -190,6 +190,10 @@ watch -n 5 nvidia-smi                  # GPU usage
 | RTX 4070 Ti SUPER | 16GB | 1 | 32 | ~170-358 | Runs 1, 3 |
 | H100 80GB | 80GB | 1 | 128 | ~950 | Karpathy's setup |
 
+## Smaller compute tips
+
+From upstream: use [TinyStories](https://huggingface.co/datasets/karpathy/tinystories-gpt4-clean), lower `vocab_size` (4096/2048/1024/256), lower `MAX_SEQ_LEN` (down to 256), lower `DEPTH` (4), `WINDOW_PATTERN = "L"`, `TOTAL_BATCH_SIZE` down to `2**14`. See notable forks below.
+
 ## Key lessons
 
 1. **TOTAL_BATCH_SIZE is the #1 lever.** Halving from 2\*\*19 to 2\*\*18 doubles steps and was the biggest single win. Found by Karpathy (125 exp) and independently by our agent 2 (run 4).
@@ -198,6 +202,12 @@ watch -n 5 nvidia-smi                  # GPU usage
 4. **Hyperparameters tuned at N steps don't transfer to 2N steps.** Old "best" config from run 2 (150 steps) was worse than baseline at run 4 (240 steps).
 5. **Claude's gradient is consistent.** Same interventions found across all runs, regardless of hardware or agent design.
 6. **Throughput > capacity at short budgets.** Smaller model + more steps beats bigger model + fewer steps at 5-minute wall clock. Flips at longer budgets.
+
+## Notable forks
+
+- [miolini/autoresearch-macos](https://github.com/miolini/autoresearch-macos) (MacOS)
+- [trevin-creator/autoresearch-mlx](https://github.com/trevin-creator/autoresearch-mlx) (MacOS)
+- [jsegov/autoresearch-win-rtx](https://github.com/jsegov/autoresearch-win-rtx) (Windows)
 
 ## Documents
 
