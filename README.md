@@ -4,22 +4,25 @@ Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding
 
 ## Results
 
-### Single-Ralph on RTX 4070 Ti SUPER (16GB) — 32 experiments
+### Single-Ralph on RTX 4070 Ti SUPER (16GB) — 42 experiments
 
-Best: **1.155 BPB** (from 1.193 baseline, -3.2%)
+Best: **1.150 BPB** (from 1.193 baseline, -3.6%)
 
 | # | Experiment | val_bpb | Status | Insight |
 |---|-----------|---------|--------|---------|
 | 0 | Baseline (batch=32) | 1.193 | keep | Initial |
-| 3 | Matrix LR 0.06, Emb LR 0.9 | 1.181 | keep | Higher LR helps |
-| 4 | Matrix LR 0.08, Emb LR 1.2 | 1.179 | keep | Even higher |
+| 4 | Matrix LR 0.08, Emb LR 1.2 | 1.179 | keep | Higher LR helps |
 | 6 | Warmdown 0.5→0.3 | 1.177 | keep | Less cooldown |
-| 8 | FINAL_LR_FRAC 0.0→0.1 | 1.174 | keep | Non-zero floor |
-| 12 | Unembedding LR 0.004→0.008 | 1.170 | keep | LR scaling win |
-| 15 | Scalar LR 0.5→1.0 | 1.169 | keep | LR scaling win |
-| 17 | Depth 8→6 | 1.158 | keep | Fewer params, more steps |
+| 9 | FINAL_LR_FRAC 0.2 | 1.174 | keep | Non-zero floor |
+| 12 | Unembedding LR 0.008 | 1.170 | keep | LR scaling win |
+| 15 | Scalar LR 1.0 | 1.169 | keep | LR scaling win |
+| 17 | **Depth 8→6** | **1.158** | keep | Biggest single win |
 | 25 | Depth 6→5 | 1.157 | keep | Even smaller better |
 | 32 | Window all-short S | 1.155 | keep | Faster + better quality |
+| 35 | Muon warmup 300→100 steps | 1.153 | keep | Less warmup waste |
+| 37 | Softcap 15→10 | 1.152 | keep | Tighter capping |
+| 38 | Softcap 10→8 | 1.151 | keep | Even tighter |
+| 42 | Cosine warmdown | 1.150 | keep | Smooth LR decay |
 
 ### Multi-Ralph on A100 SXM4 40GB (3 agents) — 20 experiments in ~1 hour
 
@@ -56,12 +59,12 @@ Solo baseline: 1.095 BPB (355 steps, no contention). Concurrent baseline: 1.258 
 |---|---|---|
 | **GPU** | RTX 4070 Ti SUPER (16GB) | A100 SXM4 (40GB) |
 | **Agents** | 1 | 3 concurrent |
-| **Wall clock** | ~3 hours | ~1 hour |
-| **Experiments** | 32 | 20 |
-| **Experiments/hour** | ~11 | ~20 |
+| **Wall clock** | ~3.5 hours | ~1 hour |
+| **Experiments** | 42 | 20 |
+| **Experiments/hour** | ~12 | ~20 |
 | **Steps per run** | ~358 | ~140-177 (GPU contention) |
-| **Best BPB** | **1.155** | 1.180 (concurrent) |
-| **Improvement** | -3.2% from baseline | -6.2% from concurrent baseline |
+| **Best BPB** | **1.150** | 1.180 (concurrent) |
+| **Improvement** | -3.6% from baseline | -6.2% from concurrent baseline |
 
 ### Key findings
 
