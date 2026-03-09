@@ -33,6 +33,14 @@ if [ "$GPU_COUNT" -lt 8 ]; then
 fi
 echo ""
 
+# --- Guard against accidental re-launch ---
+
+if screen -ls 2>/dev/null | grep -q ralph-agent; then
+    echo "ERROR: ralph-agent screens already running. Stop them first:"
+    echo "  for i in \$(seq 0 7); do screen -S ralph-agent\$i -X quit; done"
+    exit 1
+fi
+
 # --- Initialize run4 directory ---
 
 mkdir -p "$RUN4_DIR/shared" "$RUN4_DIR/results"
@@ -42,10 +50,13 @@ rm -f "$SHARED_DIR/queue/"*.md "$SHARED_DIR/active/"*.md
 # Copy train.py as starting point
 cp "$REPO_DIR/train.py" "$SHARED_DIR/best/train.py"
 
-# Initialize results.tsv
-printf 'commit\tval_bpb\tmemory_gb\tstatus\tdescription\tagent\tdesign\n' > "$SHARED_DIR/results.tsv"
+# Initialize results.tsv (preserve existing if non-empty)
+if [ ! -s "$SHARED_DIR/results.tsv" ] || [ "$(wc -l < "$SHARED_DIR/results.tsv")" -le 1 ]; then
+    printf 'commit\tval_bpb\tmemory_gb\tstatus\tdescription\tagent\tdesign\n' > "$SHARED_DIR/results.tsv"
+fi
 
-# Initialize shared blackboard for agents 2-5
+# Initialize shared blackboard (preserve existing if non-empty)
+if [ ! -s "$RUN4_DIR/shared/blackboard.md" ]; then
 cat > "$RUN4_DIR/shared/blackboard.md" << 'EOF'
 # Shared Blackboard (Agents 2-5)
 
@@ -61,6 +72,7 @@ Format: append claims, responses, and requests below.
 ## Requests
 <!-- Agent asks another to test something: "REQUEST agent2 to agent3: test LR 0.12 at depth 5" -->
 EOF
+fi
 
 # --- Create worktrees ---
 
@@ -398,7 +410,7 @@ CONSTRAINTS:
 - CUDA_VISIBLE_DEVICES=7 (your dedicated GPU)
 - DEVICE_BATCH_SIZE = 64. This is YOUR setting. Other agents use 32.
 - TOTAL_BATCH_SIZE = 2**19. NEVER change this.
-- You CAN test depth > 10 (you have headroom). Try depth 12, 14 if you want.
+- You CAN test depth > 10 (you have headroom). Try depth 12, 14 if you want. Ignore the "Max depth: 10" in strategy.md — that constraint is for batch=32 agents, not you.
 - Always start from: cp multi-ralph/best/train.py train.py (then change batch to 64)
 - Do not stop. Do not ask questions. Run experiments forever.
 AGENTEOF

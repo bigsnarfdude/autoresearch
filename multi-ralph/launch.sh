@@ -27,6 +27,14 @@ echo "Worktrees: $WORKTREE_DIR"
 echo "Agents:    $NUM_AGENTS (all sharing GPU 0)"
 echo ""
 
+# --- Guard against accidental re-launch ---
+
+if screen -ls 2>/dev/null | grep -q ralph-agent; then
+    echo "ERROR: ralph-agent screens already running. Stop them first:"
+    echo "  for i in \$(seq 0 $((NUM_AGENTS - 1))); do screen -S ralph-agent\$i -X quit; done"
+    exit 1
+fi
+
 # --- Initialize shared state ---
 
 mkdir -p "$SHARED_DIR/queue" "$SHARED_DIR/active" "$SHARED_DIR/done" "$SHARED_DIR/best"
