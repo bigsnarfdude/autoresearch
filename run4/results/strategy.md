@@ -2,7 +2,7 @@
 
 ## UPDATED BY HUMAN OPERATOR — READ THIS FIRST
 
-## Current best: 1.0750 (depth=8, AR=96, MLP3x, mlr=0.08, 2**18, wd=0.2, agent2, 418 steps)
+## Current best: 1.0617 (depth=8, AR=96, MLP3x, mlr=0.08, 2**17, wd=0.2, agent2, 870 steps)
 ## Default baseline: ~1.095 (355 steps solo, batch=32)
 ## 8-agent baseline: ~1.133 (213 steps, CPU/IO contention reduces steps)
 

@@ -123,3 +123,30 @@ c4b75f4	1.112797	29.6	discard	depth=10 batch=64 MLP2.5x mlr=0.14 (too high)	agen
 c4b75f4	1.112391	15.6	regress	depth8_ar96_mlp3x_mlr0.08_wd0.2_beta0.9	agent5	debate-A
 d8-ar96-mlp3	1.113429	15.6	done	depth=8 AR=96 MLP3x at 2**19, 202 steps	agent6	debate-B
 exp_014	emb_lr=0.6(revert)	1.087628	423	15629	discard	emb_lr=0.6 worse than 0.9 by 0.010 BPB
+c4b75f4	1.156837	18.8	revert	depth=10 aspect=76 warmup=0.05	agent0	vanilla
+c4b75f4	1.090733	30.2	keep	depth=8 AR=96 MLP3x batch=64 mlr=0.12 emb=0.9 wd=0.2	agent7	bigbatch
+c4b75f4	1.109159	15.6	regress	depth8_ar96_mlp3x_mlr0.08_wd0.2_finalLR0.05	agent5	debate-A
+c4b75f4	1.079293	19.2	discard	depth=10 AR=76 MLP3x mlr=0.08 2**18 wd=0.05 (task100, mlr too high for d10)	agent2	blackboard
+d8-ar96-mlp3-mlr08	1.111380	15.6	done	depth=8 AR=96 MLP3x mlr=0.08 wd=0.2 at 2**19	agent6	debate-B
+exp16	1.082376	15.6	discard	emb_lr=0.9+unemb=0.006 on winning config — WORSE (373 vs 412 steps), not worth	agent4	supervisor
+exp_015	mlr=0.04+emb=0.9	1.108894	399	15629	discard	mlr=0.04 too conservative even with emb_lr=0.9
+exp018	1.093	15.6	discard	final_lr_frac=0.1 on new best (d8ar96)	agent1	memory
+c4b75f4	1.122992	17.7	keep	depth=10 aspect=76 mlp2.5	agent0	vanilla
+c4b75f4	1.096011	37.2	discard	depth=10 AR=76 MLP3x batch=64 (too slow, AR=64 MLP2.5x better)	agent7	bigbatch
+c4b75f4	1.079884	15.6	discard	depth=8 AR=96 MLP3x emb_lr=0.9 unemb=0.006 (neutral/worse, 391 steps)	agent2	blackboard
+exp17	1.080851	15.6	discard	wd=0.15 on winning config — WORSE than wd=0.2 (1.081 vs 1.076, 389 vs 412 steps)	agent4	supervisor
+c4b75f4	1.098355	20.8	regress	depth8_ar128_mlp3x_mlr0.08_wd0.2_batch2_18	agent5	debate-A
+d8-ar96-swiglu	1.104468	18.1	keep	depth=8 AR=96 SwiGLU MLP3x mlr=0.08 at 2**19, 196 steps	agent6	debate-B
+exp_016	AR=112(896-dim)	1.110807	367	18172	discard	Too wide: fewer steps (367 vs 437), worse result
+c4b75f4	1.078466	28.6	keep	**BEST** depth=8 AR=96 MLP2.5x batch=64 mlr=0.12 emb=0.9 wd=0.2	agent7	bigbatch
+c4b75f4	1.061694	15.6	keep	**NEW GLOBAL BEST** depth=8 AR=96 MLP3x 2**17 batch mlr=0.08 wd=0.2, 870 steps	agent2	blackboard
+exp18	1.079364	12.1	discard	depth=6 AR=128 (dim=768) too shallow, 456 steps, 66.8M params	agent4	supervisor
+d10-ar64-swiglu	1.125754	18.6	keep	depth=10 AR=64 SwiGLU MLP3x at 2**19, 209 steps	agent6	debate-B
+exp_017	SwiGLU	1.191468	408	-	discard	SwiGLU too many params (99M), much worse
+c4b75f4	1.131956	18.1	discard	depth8_ar96_mlp3x_swiglu_mlr0.08_wd0.2_batch2_18	agent5	debate-A
+c4b75f4	1.075135	27.0	keep	**BEST** depth=8 AR=96 MLP2x batch=64 mlr=0.12 emb=0.9 wd=0.2 289steps	agent7	bigbatch
+c4b75f4	1.068362	15.4	discard	depth=8 AR=96 MLP3x 2**16 batch mlr=0.08 wd=0.2, 1735 steps (too noisy, 2**17 better)	agent2	blackboard
+exp19	1.055344	15.6	keep	**NEW GLOBAL BEST** depth=8 AR=96 MLP3x 2**17 mlr=0.08 wd=0.2 RoPE200K init0.68 STABLE 933 steps	agent4	supervisor
+d8-ar96-swiglu2x	1.095668	15.6	keep	**depth=8 AR=96 SwiGLU MLP2x** mlr=0.08 at 2**19, 244 steps	agent6	debate-B
+exp_018	batch=2**17	1.061152	919	15629	keep	NEW BEST: 2**17 batch, 919 steps, near global best
+c4b75f4	1.106801	15.6	discard	depth8_ar96_mlp2x_swiglu_mlr0.08_wd0.2_batch2_18	agent5	debate-A
