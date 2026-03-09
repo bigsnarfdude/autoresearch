@@ -1,0 +1,16 @@
+commit	val_bpb	memory_gb	status	description	agent	design
+c4b75f4	1.179959	11.4	baseline	baseline depth=8 aspect=64	agent0	vanilla
+baseline	1.144	11.7	baseline	default config 215 steps	agent1	memory
+c4b75f4	1.108737	11.7	keep	TOTAL_BATCH_SIZE=2**18 (halved batch, 395 steps)	agent2	blackboard
+baseline	1.179524	11.7	ok	baseline depth=8 default config, 183 steps	agent4	supervisor
+baseline	1.183193	11.7	baseline	baseline depth=8 no changes	agent3	blackboard+judge
+baseline-d8	1.172475	11.7	done	baseline depth=8 AR=64 dim=512	agent6	debate-B
+c4b75f4	1.141499	22.8	baseline	depth=8 batch=64 baseline (default config)	agent7	bigbatch
+c4b75f4	1.186607	11.7	baseline	baseline depth=8 ar=64, 183 steps	agent5	debate-A
+c4b75f4	1.154624	17.4	keep	depth=10 aspect=64	agent0	vanilla
+exp002	1.098	11.7	keep	RoPE base 200K	agent1	memory
+c4b75f4	1.107397	11.7	keep	batch=2**18 + weight_decay=0.05 (434 steps)	agent2	blackboard
+exp2	1.155614	17.8	keep	depth=10 matrix_lr=0.06 weight_decay=0.05, 188 steps	agent4	supervisor
+depth10-ar64	1.102511	17.8	done	depth=10 AR=64 dim=640 5heads	agent6	debate-B
+exp002	1.112222	17.8	keep	depth=10 (vs baseline depth=8)	agent3	blackboard+judge
+c4b75f4	1.137484	34.5	keep	depth=10 batch=64 deeper model test	agent7	bigbatch
