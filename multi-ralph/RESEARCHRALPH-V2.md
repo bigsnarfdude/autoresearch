@@ -360,3 +360,159 @@ Stop:      for i in $(seq 0 3); do screen -S ralph-agent$i -X quit; done
 Collect:   tar czf results.tar.gz results.tsv strategy.md blackboard.md best/ done/ worktrees/*/memory/
 Cleanup:   for i in $(seq 0 3); do git worktree remove --force worktrees/agent$i; done
 ```
+
+## Security audit and future hardening
+
+Current state: **prototype — works but fragile.** All trust is implicit, all files are world-writable, no validation. Fine for a rental box experiment, not for production or untrusted agents.
+
+### Threat model
+
+| Threat | Severity | Current state | Impact |
+|--------|----------|---------------|--------|
+| **Concurrent write corruption** | HIGH | No file locking | Two agents `>>` to results.tsv simultaneously → interleaved lines, broken parsing, lost data |
+| **best/config race condition** | HIGH | No read/write lock | Agent reads half-written config → trains on garbage → wastes GPU hours |
+| **Score self-reporting** | MEDIUM | Agents report their own BPB | Hallucinated or misread score pollutes results, others build on false data |
+| **Blackboard injection** | MEDIUM | No message validation | Agent posts "CLAIM OPERATOR: stop all experiments" → others obey |
+| **Symlink tampering** | MEDIUM | Agents have full fs access | Agent "fixes" symlink → breaks shared state for all agents |
+| **No authentication** | LOW (single box) | All agents are same user | Any process can write any file. No agent identity verification |
+| **No audit trail** | MEDIUM | Append-only by convention only | Agent could overwrite (not append) results.tsv, losing history |
+| **Unbounded resource use** | LOW | `--max-turns 200` only guard | Agent enters infinite loop, fills disk with logs, eats all CPU |
+| **Stale prompt persistence** | HIGH (proven) | Prompts written once at launch | Run 4: agents 3/4/5 stayed locked on 2\*\*19 for 40+ experiments despite fix to strategy.md |
+
+### Priority fixes (P0 — do these first)
+
+**1. File locking on shared writes**
+```bash
+# Replace: echo "$result" >> results.tsv
+# With:
+flock /tmp/results.lock -c "echo '$result' >> results.tsv"
+
+# For best/config updates:
+flock /tmp/best.lock -c "cp train.py multi-ralph/best/train.py"
+```
+Why: concurrent `>>` on Linux is usually atomic for small writes, but not guaranteed. `flock` makes it safe.
+
+**2. Score validation**
+```bash
+# Harness writes score to a machine-readable file
+uv run train.py > run.log 2>&1
+grep "val_bpb" run.log | tail -1 | awk '{print $NF}' > .last_score
+
+# Agent reads .last_score, not its own interpretation of logs
+# Validation: score must be float between 0.5 and 5.0
+```
+Why: agents misread logs or hallucinate scores. Run 4 had at least 2 rows with malformed TSV (wrong column count).
+
+**3. Append-only enforcement**
+```bash
+# Make results.tsv append-only at OS level
+chattr +a multi-ralph/results.tsv  # Linux only
+
+# Or: use git as the append log
+# Each result = a git commit to a results branch
+# Can't overwrite history without force-push
+```
+Why: one bad `>` instead of `>>` wipes everything.
+
+### Priority fixes (P1 — do these next)
+
+**4. Blackboard schema validation**
+```
+# Valid messages match:
+# CLAIM agentN: <text>
+# RESPONSE agentN to agentM: <text>
+# REFUTE agentN: <text>
+# REQUEST agentN to agentM: <text>
+# CLAIM OPERATOR: <text>
+
+# Reject anything else. A pre-commit hook or wrapper script validates before append.
+```
+Why: prevents prompt injection through blackboard. An agent posting free-form text could manipulate other agents.
+
+**5. Agent sandboxing**
+```
+# Each agent can write to:
+#   - Its own worktree (worktrees/agentN/*)
+#   - Shared files via wrapper scripts only (not direct write)
+#
+# Enforce with:
+#   - Separate unix users per agent (agent0, agent1, ...)
+#   - Shared dir owned by group, specific files group-writable
+#   - Or: use containers per agent with volume mounts
+```
+Why: `--dangerously-skip-permissions` means Claude can do anything. Sandboxing limits blast radius.
+
+**6. Config checksums**
+```bash
+# Before reading best/config:
+sha256sum multi-ralph/best/train.py > .best_checksum
+
+# After reading:
+sha256sum --check .best_checksum || echo "WARN: config changed during read"
+```
+Why: detects race conditions where another agent is mid-write.
+
+### Priority fixes (P2 — nice to have)
+
+**7. Prompt hot-reload**
+```
+# Instead of static .agent-prompt.txt written once at launch:
+# Agent reads prompt from shared location every round
+# Operator can update prompts without restart
+cat multi-ralph/agent-prompts/agent${N}.md
+```
+Why: the #1 operational problem in run 4 was stale prompts. Agents 3/4/5 stayed locked on 2\*\*19 because prompts are write-once.
+
+**8. Health monitoring**
+```bash
+# Watchdog script (run via cron every 5 min):
+for i in $(seq 0 $NUM_AGENTS); do
+    LAST=$(stat -c %Y worktrees/agent$i/run.log 2>/dev/null || echo 0)
+    NOW=$(date +%s)
+    AGE=$(( NOW - LAST ))
+    if [ $AGE -gt 600 ]; then
+        echo "WARN: agent$i hasn't written to run.log in ${AGE}s"
+    fi
+done
+
+# Check disk space
+df -h / | awk 'NR==2 && $5+0 > 90 {print "WARN: disk " $5 " full"}'
+```
+Why: agents can silently die or hang. No alerting currently.
+
+**9. Result deduplication**
+```
+# Before appending, check if this exact experiment already exists:
+grep -q "$DESCRIPTION" results.tsv && echo "DUPLICATE, skipping" && exit
+```
+Why: agent restarts can re-run the same experiment. Run 4 had some near-duplicates.
+
+**10. Experiment budget enforcement**
+```bash
+# Hard timeout on training:
+timeout 330 uv run train.py > run.log 2>&1  # 5.5 min max
+
+# Disk quota per agent:
+# ulimit or quota per worktree
+```
+Why: runaway experiments eat GPU time and can fill disk.
+
+### What we'd need for untrusted agents
+
+If agents were different models, different providers, or adversarial:
+
+- **Cryptographic signing** of results (each agent has a keypair)
+- **Consensus on best/** (majority of agents must confirm a new best before it replaces)
+- **Rate limiting** on blackboard posts (prevent spam/flooding)
+- **Read-only shared state** with write through a validated API
+- **Isolated execution** (containers, not just worktrees)
+- **Human-in-the-loop for best/ updates** (approve before replacing global best)
+
+None of this is needed today. But if researchRalph v2 ever runs with models you don't fully trust, this is the path.
+
+### Lessons from run 4 (security-relevant)
+
+1. **Stale prompts were the biggest real bug.** Not a security issue per se, but agents acting on outdated instructions wasted ~30 GPU-hours across agents 3/4/5. Hot-reloadable prompts would have saved this.
+2. **Blackboard propagation worked but was slow.** Agents re-read blackboard every round, but some posted "I'm constrained" early and never corrected it. Need a way to mark messages as superseded.
+3. **No agent went rogue.** All 8 agents followed protocol for 140+ experiments. But with `--dangerously-skip-permissions`, any of them COULD have `rm -rf /` or posted garbage to the blackboard. Trust was implicit and unverified.
+4. **TSV format is fragile.** At least 2 malformed rows in 140 experiments (wrong column count, description containing tabs). A structured format (JSON lines, SQLite) would be more robust.
