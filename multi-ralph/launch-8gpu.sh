@@ -78,7 +78,7 @@ for AGENT in $(seq 0 $((NUM_AGENTS - 1))); do
     echo "Creating worktree agent${AGENT}..."
     git worktree add -b "$BRANCH" "$TREE" HEAD
 
-    ln -sfn "$SHARED_DIR" "$TREE/multi-ralph"
+    rm -rf "$TREE/multi-ralph" && ln -sfn "$SHARED_DIR" "$TREE/multi-ralph"
     ln -sfn "$RUN4_DIR" "$TREE/run4"
     touch "$TREE/run.log"
 done
