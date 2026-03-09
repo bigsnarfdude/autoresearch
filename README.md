@@ -10,27 +10,29 @@ Fork of [karpathy/autoresearch](https://github.com/karpathy/autoresearch) adding
 
 | Run | Hardware | Agents | Design | Experiments | Best BPB | Key discovery |
 |-----|----------|--------|--------|-------------|----------|---------------|
-| 1 | RTX 4070 Ti 16GB | 1 | single-ralph | 42 | **1.150** | Depth reduction (speed > capacity) |
+| 1 | RTX 4070 Ti 16GB | 1 | single-ralph | 42 | 1.150 | Depth reduction (speed > capacity) |
 | 2 | 1×A100 40GB | 3 shared | multi-ralph | 20 | 1.180 | x0_lambda + combination search |
 | 3 | RTX 4070 Ti 16GB | 1 | single-ralph | 5+ | 1.175 | Reproduces runs 1-2 findings |
-| 4 | 8×A100 40GB | 8 (1/GPU) | 4 architectures | in progress | **1.109** | TOTAL_BATCH_SIZE halving (#1 H100 win) |
+| 4 | 8×A100 40GB | 8 (1/GPU) | 4 architectures | 91+ | **1.080** | Blackboard agent wins; matches Karpathy's #1 |
 
-### Run 4: 8 agents, 8×A100, 4 cognitive architectures (ACTIVE)
+### Run 4: 8 agents, 8×A100, 4 cognitive architectures — 91 experiments
 
-8 agents with different "brains" on 8 dedicated GPUs. Agent 2 (blackboard design with structured memory) independently discovered halving TOTAL_BATCH_SIZE — the same change that was the #1 win in [Karpathy's 125-experiment H100 run](https://github.com/karpathy/autoresearch/pull/2).
+8 agents with different "brains" on 8 dedicated GPUs. **Blackboard design wins.** Agent 2 independently discovered halving TOTAL_BATCH_SIZE — the same #1 win from [Karpathy's 125-experiment H100 run](https://github.com/karpathy/autoresearch/pull/2) — then combined it with MLP 3x, depth=10, and wider AR=76 to reach 1.080.
 
-| Agent | Design | Baseline | Best | Finding |
-|-------|--------|----------|------|---------|
-| 0 | Vanilla (no memory) | 1.180 | - | Control group |
-| 1 | Single-ralph (progress.md) | 1.144 | - | Proven persistent memory |
-| **2** | **Blackboard + structured memory** | **1.180** | **1.109** | **TOTAL_BATCH_SIZE=2\*\*18 → 395 steps, #1 win** |
-| 3 | Blackboard + judge | 1.183 | - | Self-review for confounds |
-| 4 | Supervisor | 1.180 | - | Strategic oversight for all |
-| 5 | Debate A | 1.187 | - | Proposes, debates with agent 6 |
-| 6 | Debate B | 1.172 | - | Challenges agent 5 |
-| 7 | Big batch (batch=64) | 1.142 | - | Tests larger models + capacity |
+| Rank | Agent | Design | Exps | Best | Hit rate | Key finding |
+|------|-------|--------|------|------|----------|-------------|
+| 1 | **agent2** | **Blackboard** | 11 | **1.080** | 64% | MLP 3x + depth10 + 2\*\*18 + AR=76 |
+| 2 | agent1 | Memory | 12 | 1.082 | 33% | RoPE 200K + init 0.68 + shortwin |
+| 3 | agent6 | Debate-B | 10 | 1.083 | ~40% | Combined others' wins (challenger role) |
+| 4 | agent7 | BigBatch | 11 | 1.095 | 55% | batch=64 capacity test |
+| 5 | agent5 | Debate-A | 10 | 1.097 | 20% | Width path: ar=96 mlp3x warmup=0 |
+| 6 | agent3 | Judge | 8 | 1.104 | 50% | Confirmed ar=96 win, slowest throughput |
+| 7 | agent4 | Supervisor | 11 | 1.121 | 73% | Good directives, own experiments unstable |
+| 8 | agent0 | Vanilla | 12 | 1.152 | 17% | **9 reverts — proves memory matters** |
 
-Agent 2 posted to the shared blackboard: *"TOTAL_BATCH_SIZE=2\*\*18 is a massive win. 1.109 at 395 steps vs 1.18 at 183 steps. All agents should use 2\*\*18 as new baseline."* The supervisor (agent 4) confirmed. The judge (agent 3) was constrained by stale prompts — a lesson in meta-parameter management.
+**Cross-pollination in action:** Agent 1 found RoPE 200K. Agent 2 found batch halving. Agent 6 combined both with init 0.68. No single agent found the full winning combination — the system did. Agent 0 (vanilla, no memory) tried the same failing experiment 9 times.
+
+See [multi-ralph/RESEARCHRALPH-V2.md](multi-ralph/RESEARCHRALPH-V2.md) for the distilled v2 architecture.
 
 ### Run 1: Single-Ralph on RTX 4070 Ti SUPER (16GB) — 42 experiments
 
@@ -197,6 +199,8 @@ watch -n 5 nvidia-smi                  # GPU usage
 
 ## Documents
 
+- **[multi-ralph/RESEARCHRALPH-V2.md](multi-ralph/RESEARCHRALPH-V2.md)** — v2 architecture: winning design, getting started, domain adaptation
+- [multi-ralph/EXTENDING.md](multi-ralph/EXTENDING.md) — Porting to other domains (compiler flags, SQL, trading, etc.)
 - [FINDINGS.md](FINDINGS.md) — LLM as Optimizer thesis, cross-run analysis, meta-parameters, serialization problem
 - [EXPERIMENT-PROTOCOL.md](EXPERIMENT-PROTOCOL.md) — Full protocol, variables, metrics, reproducibility
 - [multi-ralph/PROPOSAL-RUN4.md](multi-ralph/PROPOSAL-RUN4.md) — Run 4 design, hypotheses, predictions

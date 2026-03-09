@@ -9,5 +9,15 @@
   - 11.7GB VRAM, well within budget
 - weight_decay=0.05 on 2**18: 1.1074 at 434 steps — marginal improvement over wd=0.2
 - RoPE base 200K on 2**18: 1.098 (agent1) — CURRENT GLOBAL BEST
+- init_scale=0.68 on 2**18+RoPE200K: 1.1003 (confirms ~0.008 improvement)
+- depth=10 on 2**18+RoPE200K+init0.68: 1.0876, 372 steps, 17.8GB
+  - Agent6 got 1.0841 at depth=10+RoPE200K+init0.68 at 2**19 (388 steps)
+  - 2**18 batch helps LESS at depth=10 (per-step cost higher, fewer bonus steps)
+- HEAD_DIM=64: 1.107 (agent1) — WORSE than HEAD_DIM=128 at depth=8
+- EMBEDDING_LR=1.0 vs 0.6: neutral at depth=10 (1.0854 vs 1.0855)
+- **MLP_ratio=3x at depth=10: 1.0799, 431 steps, 16.1GB — NEW GLOBAL BEST**
+  - 3x MLP gives ~12% more steps than 4x (431 vs 386)
+  - Smaller model (77.7M vs 85.9M) trains faster per step
+  - The extra steps more than compensate for less capacity
 - DEVICE_BATCH_SIZE=32 is fixed constraint
-- With 2**18 batch, grad_accum_steps = 4; steps vary 395-463 by contention
+- At depth=8: 2**18 gives ~395-434 steps; at depth=10 4xMLP: ~372-392; depth=10 3xMLP: ~431

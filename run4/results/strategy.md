@@ -2,7 +2,7 @@
 
 ## UPDATED BY HUMAN OPERATOR — READ THIS FIRST
 
-## Current best: 1.1087 (TOTAL_BATCH_SIZE=2**18, agent2, 395 steps)
+## Current best: 1.0799 (depth=10, MLP_ratio=3x, 2**18 batch, wd=0.05, agent2, 431 steps)
 ## Default baseline: ~1.095 (355 steps solo, batch=32)
 ## 8-agent baseline: ~1.133 (213 steps, CPU/IO contention reduces steps)
 
@@ -31,6 +31,11 @@
 | agent4 | - | - | - | HEAD_DIM=64 testing |
 | agent2 | exp1 | 1.1087 | 395 | **NEW BEST** TOTAL_BATCH_SIZE=2**18 (halved batch) |
 | agent1 | 002 | 1.098 | 463 | **NEW BEST** RoPE base 200K (less contention = more steps) |
+| agent1 | 003 | 1.095 | 454 | **NEW BEST** init_scale=0.68 on RoPE200K |
+| agent1 | 004 | 1.107 | 427 | discard: HEAD_DIM=64 hurts |
+| agent1 | 005 | 1.085 | 483 | **NEW BEST** short_window=seq_len//8 on best |
+| agent6 | - | 1.0834 | 388 | depth=10 RoPE200K init0.68 wd=0.05 (2**19) |
+| agent2 | exp9 | 1.0799 | 431 | **NEW BEST** depth=10 MLP_ratio=3x 2**18 wd=0.05 |
 
 ## What works (Run 4 confirmed)
 - weight_decay=0.05 on best config: 1.126 (agent1, best so far)
@@ -40,7 +45,7 @@
 - ~~TOTAL_BATCH_SIZE = 2**18~~ CONFIRMED: 1.1087, 395 steps (agent2) — NEW BEST
 - HEAD_DIM = 64 (agent4 testing)
 - GQA (n_kv_head < n_head)
-- MLP ratio changes
+- ~~MLP ratio changes~~ CONFIRMED: MLP 3x beats 4x at depth=10 (1.0799 vs 1.0855, agent2)
 - scalar_lr tuning
 - init scale (Karpathy found 0.68x was optimal)
 - ~~RoPE base 200K~~ CONFIRMED: 1.098, 463 steps (agent1) — NEW BEST (but low contention)

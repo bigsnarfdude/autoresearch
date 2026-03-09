@@ -14,3 +14,94 @@ exp2	1.155614	17.8	keep	depth=10 matrix_lr=0.06 weight_decay=0.05, 188 steps	age
 depth10-ar64	1.102511	17.8	done	depth=10 AR=64 dim=640 5heads	agent6	debate-B
 exp002	1.112222	17.8	keep	depth=10 (vs baseline depth=8)	agent3	blackboard+judge
 c4b75f4	1.137484	34.5	keep	depth=10 batch=64 deeper model test	agent7	bigbatch
+c4b75f4	-	-	crash	depth=12 batch=64 OOM (~40GB needed)	agent7	bigbatch
+c4b75f4	-	-	crash	depth=11 batch=64 OOM (~40GB needed)	agent7	bigbatch
+exp003	1.095	11.7	keep	init_scale=0.68 on RoPE200K	agent1	memory
+c4b75f4	1.166892	24.7	revert	depth=12 aspect=64 too slow	agent0	vanilla
+c4b75f4	1.100297	11.7	keep	init_scale=0.68x on best (2**18+RoPE200K), 433 steps	agent2	blackboard
+d10-rope200k	1.092688	17.8	done	depth=10 RoPE200K AR=64 dim=640	agent6	debate-B
+exp3	1.179357	17.8	fail	depth=10 RoPE200K wd=0.05 DIVERGED at step 167, 188 steps	agent4	supervisor
+exp002b	1.190004	17.8	discard	depth=10 DIVERGED around step 132	agent3	blackboard+judge
+c4b75f4	1.138872	34.5	discard	depth=10 batch=64 RoPE200K (worse than depth=10 alone)	agent7	bigbatch
+c4b75f4	1.178525	17.8	keep	depth=10 ar=64 rope200k, 201 steps	agent5	debate-A
+exp004	1.107	11.7	discard	HEAD_DIM=64 on best (RoPE200K+init0.68+batch18)	agent1	memory
+d10-rope200k-init68	1.084137	17.8	done	depth=10 RoPE200K init0.68x	agent6	debate-B
+c4b75f4	1.151832	20.8	keep	depth=10 aspect=76	agent0	vanilla
+c4b75f4	1.087585	17.8	keep	depth=10 on best (2**18+RoPE200K+init0.68), 372 steps	agent2	blackboard
+exp4	1.153110	17.8	keep	depth=10 RoPE200K init0.68 wd=0.2, 193 steps, stable	agent4	supervisor
+exp003	1.216262	17.8	discard	depth=10 matrix_lr=0.02 DIVERGED step 160	agent3	blackboard+judge
+c4b75f4	1.160595	17.8	keep	depth10_mlr0.06_wd0.05_init0.68_rope200k	agent5	debate-A
+exp005	1.085	11.7	keep	short_window=seq_len//8 on best	agent1	memory
+d10-rope200k-init68-wd05	1.083397	17.8	done	depth=10 RoPE200K init0.68x wd=0.05	agent6	debate-B
+c4b75f4	1.461500	24.2	revert	depth=10 aspect=84 too large	agent0	vanilla
+exp5	1.162351	17.8	discard	depth=10 RoPE200K init0.68 warmdown=0.67 WORSE, 199 steps	agent4	supervisor
+c4b75f4	1.154883	17.8	discard	depth=10 softcap=30 (2**19+RoPE200K+init0.68), 201 steps — much worse	agent2	blackboard
+c4b75f4	1.120901	34.5	keep	depth=10 batch=64 mlr=0.08 wd=0.05 rope50K x0=0.05	agent7	bigbatch
+exp004	1.147283	11.7	keep-but-confounded	depth=8 RoPE200K+x0_0.1 (from best)	agent3	blackboard+judge
+c4b75f4	1.145919	11.7	best-a5	depth8_mlr0.08_wd0.05_warmup0.05_rope200k_init0.68	agent5	debate-A
+exp006	1.095	11.7	discard	MATRIX_LR=0.06 on best	agent1	memory
+d10-shortwin8-wd05	1.138591	17.8	discard	depth=10 short_window//8 wd=0.05 WORSE	agent6	debate-B
+c4b75f4	1.175514	20.8	revert	depth=10 aspect=76 matrix_lr=0.06	agent0	vanilla
+exp6	1.135557	17.8	keep	depth=10 RoPE200K init0.68 warmdown=0.3 shortwin//8, 209 steps	agent4	supervisor
+c4b75f4	1.122691	34.5	discard	depth=10 batch=64 mlr=0.04 wd=0.05 rope50K (mlr=0.08 better)	agent7	bigbatch
+c4b75f4	1.146663	17.8	discard	depth=10 short_window=seq//8 wd=0.05 (2**19), 200 steps	agent2	blackboard
+exp005	1.156591	17.8	discard	depth=10 RoPE200K unstable spikes	agent3	blackboard+judge
+c4b75f4	1.154948	11.7	regress	depth8_mlr0.10_wd0.05_softcap30_warmup0.05	agent5	debate-A
+exp007	1.101	11.7	discard	weight_decay=0.05 on best	agent1	memory
+c4b75f4	1.200475	20.8	revert	depth=10 aspect=76 matrix_lr=0.03	agent0	vanilla
+d10-mlr06-wd05	1.131061	17.8	discard	depth=10 matrix_lr=0.06 LOSS SPIKE at step 183	agent6	debate-B
+c4b75f4	1.114484	34.5	keep	depth=10 batch=64 mlr=0.12 wd=0.05 rope50K x0=0.05	agent7	bigbatch
+exp7	1.143670	17.8	keep	depth=10 RoPE200K init0.68 shortwin//8 warmdown=0.5 STABLE, 194 steps	agent4	supervisor
+c4b75f4	1.085518	17.8	keep	depth=10 2**18 wd=0.05 RoPE200K init0.68, 386 steps	agent2	blackboard
+exp006	1.132935	11.7	keep	depth=8 RoPE200K init0.68x	agent3	blackboard+judge
+exp008	1.104	11.7	discard	softcap=30 on best	agent1	memory
+c4b75f4	1.158044	11.7	regress	depth8_mlr0.08_wd0.05_softcap30_warmup0.05	agent5	debate-A
+c4b75f4	1.228533	20.8	revert	depth=10 aspect=76 warmdown=0.67	agent0	vanilla
+c4b75f4	1.130712	34.5	discard	depth=10 batch=64 mlr=0.16 (too high, 0.12 better)	agent7	bigbatch
+d10-warmdown67	1.175310	17.8	discard	depth=10 warmdown=0.67 warmup=0.02 WORSE (GPU contention + bad schedule)	agent6	debate-B
+c4b75f4	1.085370	17.8	keep	depth=10 2**18 emb_lr=1.0 wd=0.05, 392 steps (neutral vs 0.6)	agent2	blackboard
+exp8	1.123623	17.8	keep	depth=10 RoPE200K init0.68 shortwin//8 warmdown=0.4 STABLE NEW BEST, 210 steps	agent4	supervisor
+exp007	1.127178	11.7	keep	depth=8 RoPE200K init0.68x mlr=0.08	agent3	blackboard+judge
+exp009	1.088	14.3	discard	depth=10 aspect=51 on best	agent1	memory
+c4b75f4	1.126211	17.3	best-a5	depth8_ar96_mlr0.08_wd0.05_warmup0.05_rope200k	agent5	debate-A
+c4b75f4	1.248411	20.8	revert	depth=10 aspect=76 warmdown=0.35	agent0	vanilla
+c4b75f4	1.107968	34.5	keep	depth=10 batch=64 mlr=0.12 emb_lr=0.9 unemb=0.006 wd=0.05	agent7	bigbatch
+d10-softcap30	1.129297	17.8	discard	depth=10 softcap=30 LOSS SPIKES at steps 81,138	agent6	debate-B
+c4b75f4	1.079878	16.1	keep	**NEW BEST** depth=10 MLP_ratio=3x 2**18 wd=0.05, 431 steps	agent2	blackboard
+exp9	1.120620	17.8	keep-but-spike	depth=10 RoPE200K init0.68 shortwin//8 warmdown=0.35 SPIKE step112, 217 steps	agent4	supervisor
+exp010	1.082	17.8	keep	depth=10+shortwin8 on best (RoPE200K+init0.68+batch18)	agent1	memory
+exp_008	warmdown=0.4	1.133067	215	11702	discard	warmdown=0.4 worse at depth=8 (1.133 vs 1.127)
+c4b75f4	1.219009	20.8	revert	depth=10 aspect=76 emb_lr=0.8	agent0	vanilla
+c4b75f4	1.136233	17.3	regress	depth8_ar96_mlr0.08_wd0.05_warmdown0.4	agent5	debate-A
+c4b75f4	1.110938	34.5	discard	depth=10 batch=64 warmdown=0.4 (0.5 better)	agent7	bigbatch
+d10-emblr1.0	1.167536	17.8	discard	depth=10 embedding_lr=1.0 TOO HIGH	agent6	debate-B
+c4b75f4	1.083252	15.2	discard	depth=10 MLP_ratio=2.5x 2**18 wd=0.05, 426 steps (worse than 3x)	agent2	blackboard
+exp10	1.120999	16.1	keep-but-spike	depth=10 MLP3x RoPE200K init0.68 shortwin//8 warmdown=0.4 wd=0.2 SPIKE step66, 222 steps	agent4	supervisor
+exp011	1.109	13.6	discard	MQA n_kv_head=1 on global best	agent1	memory
+c4b75f4	1.211168	20.8	revert	depth=10 aspect=76 softcap=30	agent0	vanilla
+exp_009	aspect_ratio=96	1.108382	202	17296	keep	MAJOR WIN: wider model (768-dim), loss spike at step 196
+c4b75f4	1.106597	31.2	keep	depth=10 batch=64 MLP3x RoPE200K init0.68 mlr=0.12 emb=0.9 wd=0.05	agent7	bigbatch
+c4b75f4	1.141497	15.6	regress	depth8_ar96_mlp3x_mlr0.08_wd0.05	agent5	debate-A
+c4b75f4	-	-	crash	depth=12 batch=64 MLP2x OOM (depth=12 impossible at batch=64)	agent7	bigbatch
+c4b75f4	1.081936	16.1	discard	depth=10 MLP3x warmdown=0.4 (2**18 wd=0.05), 417 steps	agent2	blackboard
+exp11	1.128269	16.1	keep-but-spike	depth=10 MLP3x RoPE200K init0.68 shortwin//8 warmdown=0.5 wd=0.2 SPIKE step33, 213 steps	agent4	supervisor
+exp012	1.085	16.1	discard	scalar_lr=1.0 on global best	agent1	memory
+c4b75f4	1.166321	20.8	revert	depth=10 aspect=76 wd=0.1	agent0	vanilla
+exp_010	mlp_ratio=3.0	1.103629	212	15629	keep	MLP 3x helps: more steps, no spike, less VRAM
+c4b75f4	1.140976	17.3	regress	depth8_ar96_mlp4x_mlr0.08_wd0.2_warmup0.05	agent5	debate-A
+c4b75f4	1.094627	29.6	keep	depth=10 batch=64 MLP2.5x RoPE200K init0.68 mlr=0.12 emb=0.9 wd=0.05	agent7	bigbatch
+exp12	1.163396	16.1	discard	depth=10 MLP3x warmdown=0.4 warmup=0.02 TERRIBLE multi-spike, 219 steps	agent4	supervisor
+exp013	1.085	16.1	discard	warmdown=0.3 on global best	agent1	memory
+c4b75f4	1.172200	20.8	revert	depth=10 aspect=76 wd=0.3	agent0	vanilla
+c4b75f4	1.078672	19.2	keep	**NEW BEST** depth=10 AR=76 MLP3x 2**18 wd=0.05, 380 steps, 103M params	agent2	blackboard
+c4b75f4	1.097276	15.6	best-a5	depth8_ar96_mlp3x_mlr0.08_wd0.2_warmup0_rope200k	agent5	debate-A
+exp_011	depth=10+ar=96	1.259175	143	25589	discard	CATASTROPHIC: model too large (163M), unstable, only 143 steps
+d10-mlp3-ssll	1.135493	16.1	discard	depth=10 MLP3x SSLL window pattern - no improvement	agent6	debate-B
+c4b75f4	1.096495	27.9	discard	depth=10 batch=64 MLP2x (2.5x better)	agent7	bigbatch
+exp014	1.085	16.1	discard	emb_lr=0.9 on global best	agent1	memory
+exp13	1.141133	17.8	discard	depth=10 MLP4x emb_lr=0.9 unemb_lr=0.006 warmdown=0.4 DIVERGED step162, 227 steps	agent4	supervisor
+c4b75f4	1.200941	24.9	revert	depth=10 aspect=76 swiglu too slow	agent0	vanilla
+c4b75f4	1.098711	19.2	discard	adam_betas=(0.9,0.95) on best — much worse	agent2	blackboard
+c4b75f4	1.098282	15.6	keep	depth8_ar96_mlp3x_mlr0.08_wd0.2_emb0.9_unemb0.006	agent5	debate-A
+exp_012	emb_lr=0.9+unemb=0.006	1.099676	215	15629	keep	Higher emb LR helps but causes spikes at steps 86-95
+c4b75f4	1.108140	29.6	discard	depth=10 batch=64 MLP2.5x RoPE50K (RoPE200K much better with MLP2.5x)	agent7	bigbatch
