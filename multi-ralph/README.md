@@ -204,6 +204,69 @@ for i in $(seq 0 7); do git worktree remove --force worktrees/agent$i; done
 4. **TOTAL_BATCH_SIZE is searchable.** Halving to 2**18 was the #1 win on the H100 leaderboard. Don't lock it.
 5. **Old "best" configs may not transfer.** Hyperparameters tuned at 150 steps (contention) are suboptimal at 240 steps (dedicated GPU).
 
+## Conductor (Symphony-inspired reactive dispatch)
+
+Instead of pre-assigning all experiments at launch, the conductor watches the blackboard for `REQUEST` lines and spawns ephemeral agents on demand.
+
+```bash
+# Run alongside existing agents — picks up REQUESTs they post
+./multi-ralph/conductor.sh
+
+# Domain-specific (uses domains/af-elicitation/WORKFLOW.md)
+./multi-ralph/conductor.sh --domain af-elicitation
+
+# Dry run — show what would be dispatched
+./multi-ralph/conductor.sh --dry-run
+
+# Tune concurrency
+MAX_CONCURRENT=8 POLL_INTERVAL=15 ./multi-ralph/conductor.sh
+```
+
+### How it works
+
+1. Running agents post `REQUEST agent2 to any: test monitoring differential` to the blackboard
+2. Conductor polls blackboard every 30s, finds unhandled REQUESTs
+3. Spawns an ephemeral agent in a fresh worktree with the request as its prompt
+4. Ephemeral agent runs the experiment, posts results back to blackboard, exits
+5. Conductor cleans up the worktree
+
+This is the difference between "8 agents run once" and "agents run until the question is answered." Agent 5's monitoring differential test (designed in Run 1 but never executed because the Lambda box was terminated) would have auto-launched.
+
+### WORKFLOW.md (agent policy)
+
+Each domain gets a `WORKFLOW.md` that defines:
+- **Stopping rules**: when to declare convergence vs keep exploring
+- **Escalation**: what constitutes a blocking finding
+- **Recording protocol**: what goes in results.tsv vs blackboard vs memory
+- **Domain constraints**: false-positive modes, forbidden actions, safety rules
+
+See `WORKFLOW.md` (base) and `domains/af-elicitation/WORKFLOW.md` (AF-specific).
+
+## Extending to new domains
+
+The multi-agent pattern is domain-agnostic. Any task with **editable parameters** and a **scalar objective** slots in. See `EXTENDING.md` for the full analysis.
+
+### Minimal template
+
+```
+domains/your-domain/
+├── WORKFLOW.md          # domain-specific agent policy
+├── config.yaml          # the thing agents edit
+├── run.sh               # harness: apply config → run → output score
+├── results.tsv          # append-only experiment log
+├── blackboard.md        # shared collaboration space
+└── best/config.yaml     # current best configuration
+```
+
+### Proven domains
+
+| Domain | Harness | Objective | Status |
+|--------|---------|-----------|--------|
+| GPT-2 training | `train.py` | val_bpb (lower=better) | 186 experiments, 1.047 BPB |
+| AF elicitation | `elicit_and_score.sh` | elicit_rate × diversity (higher=better) | 7 experiments, signal decomposition |
+
+See `domains/af-elicitation/WORKFLOW.md` and `af-elicitation-sketch.md`.
+
 ## Origin
 
-Built on [autoresearch](https://github.com/karpathy/autoresearch) by @karpathy. The "ralph loop" pattern adds persistent memory and intelligent search to the original experiment loop. Multi-ralph extends it to parallel agents with a rotating coordinator protocol. Run 4 adds cognitive architecture comparison (memory, blackboard, judge, debate, supervisor).
+Built on [autoresearch](https://github.com/karpathy/autoresearch) by @karpathy. The "ralph loop" pattern adds persistent memory and intelligent search to the original experiment loop. Multi-ralph extends it to parallel agents with a rotating coordinator protocol. Run 4 adds cognitive architecture comparison. The conductor adds [Symphony](https://github.com/openai/symphony)-inspired reactive dispatch — agents generate work items that spawn new agents.
